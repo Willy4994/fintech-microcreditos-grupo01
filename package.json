@@ -1,14 +1,15 @@
 {
   "name": "fintech-microcreditos-grupo01",
   "version": "1.0.0",
-  "description": "Este software es para una institución de microfinanzas guatemalteca que otorgara microcréditos a personas y  pequeños negocios que no acceden fácilmente a la banca tradicional.",
+  "description": "Este software es para una institución de microfinanzas guatemalteca que otorgará microcréditos a personas y pequeños negocios que no acceden fácilmente a la banca tradicional.",
   "main": "index.js",
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "repository": {
     "type": "git",
