@@ -1,0 +1,165 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+
+class Cliente {
+  - id: string
+  - nombre: string
+  - documentoIdentificacion: string
+  - telefono: string
+  - direccion: string
+}
+
+class SolicitudCredito {
+  - id: string
+  - fechaSolicitud: Date
+  - montoSolicitado: Dinero
+  - plazoMeses: number
+  - estado: string
+}
+
+class Credito {
+  - id: string
+  - fechaOtorgamiento: Date
+  - fechaDesembolso: Date
+  - capitalOriginal: Dinero
+  - saldoCapital: Dinero
+  - plazoMeses: number
+  - estado: EstadoCredito
+  - fueReestructurado: boolean
+
+  + desembolsar(): void
+  + registrarPago(pago: Pago): void
+  + actualizarEstado(): void
+}
+
+class PlanAmortizacion {
+  - id: string
+  - capital: Dinero
+  - tasaMensual: Decimal
+  - numeroCuotas: number
+
+  + generar(): Cuota[]
+}
+
+class Cuota {
+  - numero: number
+  - fechaVencimiento: Date
+  - saldoInicial: Dinero
+  - montoCuota: Dinero
+  - interesCorriente: Dinero
+  - amortizacionCapital: Dinero
+  - saldoFinal: Dinero
+  - pagada: boolean
+}
+
+class Pago {
+  - id: string
+  - fecha: Date
+  - monto: Dinero
+  - claveIdempotencia: string
+
+  + aplicar(): void
+}
+
+class Movimiento {
+  - id: string
+  - fecha: Date
+  - concepto: string
+  - monto: Dinero
+  - tipo: TipoMovimiento
+}
+
+class Cierre {
+  - id: string
+  - fechaCorte: Date
+  - tipo: TipoCierre
+  - carteraActiva: Dinero
+  - carteraEnRiesgo: Dinero
+  - porcentajeRiesgo: Decimal
+}
+
+class Dinero <<Value Object>> {
+  - monto: Decimal
+  - moneda: string
+
+  + sumar(otro: Dinero): Dinero
+  + restar(otro: Dinero): Dinero
+  + multiplicar(factor: Decimal): Dinero
+  + esCero(): boolean
+}
+
+class CalculadoraMora <<Domain Service>> {
+  + calcularInteresMoratorio(
+      capitalEnMora: Dinero,
+      tasaDiaria: Decimal,
+      diasAtraso: number
+    ): Dinero
+
+  + clasificarTramo(diasAtraso: number): TramoMora
+}
+
+class PrelacionPago <<Domain Service>> {
+  + aplicar(pago: Dinero, cuota: Cuota): ResultadoAplicacionPago
+}
+
+class Cartera <<Domain Service>> {
+  + calcularCarteraActiva(creditos: Credito[]): Dinero
+  + calcularCarteraEnRiesgo(creditos: Credito[]): Dinero
+  + calcularPorcentajeRiesgo(creditos: Credito[]): Decimal
+}
+
+enum EstadoCredito {
+  SOLICITADO
+  APROBADO
+  DESEMBOLSADO
+  VIGENTE
+  EN_MORA
+  REESTRUCTURADO
+  CANCELADO
+  RECHAZADO
+  ANULADO
+  INCOBRABLE
+}
+
+enum TramoMora {
+  SIN_MORA
+  MORA_1
+  MORA_2
+  MORA_3
+  VENCIDO
+}
+
+enum TipoMovimiento {
+  DESEMBOLSO
+  CAPITAL
+  INTERES_CORRIENTE
+  INTERES_MORATORIO
+  GASTO
+  RECUPERACION_INCOBRABLE
+}
+
+enum TipoCierre {
+  DIARIO
+  MENSUAL
+}
+
+Cliente "1" -- "0..*" SolicitudCredito : realiza >
+SolicitudCredito "1" --> "0..1" Credito : origina >
+Credito "1" *-- "1" PlanAmortizacion
+PlanAmortizacion "1" *-- "1..*" Cuota
+Credito "1" -- "0..*" Pago
+Pago "1" -- "1..*" Movimiento
+Credito "1" -- "0..*" Movimiento
+Cierre "1" -- "0..*" Movimiento : consolida >
+Credito --> EstadoCredito
+CalculadoraMora --> TramoMora
+
+PlanAmortizacion ..> Dinero
+Credito ..> Dinero
+Cuota ..> Dinero
+Pago ..> Dinero
+Movimiento ..> Dinero
+Cierre ..> Dinero
+
+@enduml
