@@ -1,0 +1,59 @@
+@startuml
+title Registrar pago de cuota — Aplicación de prelación
+
+actor "Operador de Cobros" as Operador
+
+participant "RegistrarPago" as CasoUso
+participant "Credito" as Credito
+participant "CalculadoraMora" as Mora
+participant "PrelacionPago" as Prelacion
+participant "Pago" as Pago
+participant "Movimiento" as Movimiento
+
+Operador -> CasoUso : registrarPago(creditoId, monto, fechaCorte,\nclaveIdempotencia)
+
+CasoUso -> Credito : obtenerCuotasVencidas()
+
+Credito --> CasoUso : cuotasVencidas
+
+CasoUso -> Mora : calcularInteresMoratorio(\ncapitalEnMora, tasaDiaria, diasAtraso)
+
+Mora --> CasoUso : interesMoratorio
+
+CasoUso -> Pago : crear(monto, fechaCorte,\nclaveIdempotencia)
+
+CasoUso -> Prelacion : aplicar(monto, deuda)
+
+activate Prelacion
+
+Prelacion -> Prelacion : 1. aplicarGastos()
+Prelacion -> Prelacion : 2. aplicarInteresMoratorio()
+Prelacion -> Prelacion : 3. aplicarInteresCorriente()
+Prelacion -> Prelacion : 4. aplicarCapital()
+
+Prelacion --> CasoUso : resultadoAplicacion
+
+deactivate Prelacion
+
+CasoUso -> Movimiento : registrarMovimientos(resultadoAplicacion)
+
+CasoUso -> Credito : actualizarSaldo()
+
+alt Todo lo vencido fue pagado
+    CasoUso -> Credito : regularizar()
+    note right of Credito
+      EN_MORA -> VIGENTE
+      diasAtraso = 0
+    end note
+else Queda deuda vencida
+    CasoUso -> Credito : recalcularDiasAtraso()
+    note right of Credito
+      Continúa EN_MORA.
+      El tramo se deriva
+      de los días de atraso.
+    end note
+end
+
+CasoUso --> Operador : pago registrado
+
+@enduml

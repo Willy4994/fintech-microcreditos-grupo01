@@ -1,0 +1,57 @@
+@startuml
+title Desembolsar crédito y generar plan de amortización
+
+actor "Asesor de Crédito" as Asesor
+
+participant "DesembolsarCredito" as CasoUso
+participant "SolicitudCredito" as Solicitud
+participant "Credito" as Credito
+participant "PlanAmortizacion" as Plan
+participant "Movimiento" as Movimiento
+
+Asesor -> CasoUso : desembolsar(solicitudId, fechaDesembolso)
+
+CasoUso -> Solicitud : verificarEstado()
+
+Solicitud --> CasoUso : APROBADO
+
+alt Solicitud aprobada
+
+    CasoUso -> Credito : crearCredito()
+
+    CasoUso -> Plan : generar(\ncapital, tasaMensual, numeroCuotas)
+
+    activate Plan
+
+    loop Por cada cuota
+        Plan -> Plan : calcularInteres()
+        Plan -> Plan : calcularAmortizacion()
+        Plan -> Plan : calcularSaldo()
+    end
+
+    Plan -> Plan : ajustarUltimaCuota()
+
+    Plan --> CasoUso : planGenerado
+
+    deactivate Plan
+
+    CasoUso -> Credito : asignarPlan(planGenerado)
+
+    CasoUso -> Movimiento : registrarDesembolso(capital)
+
+    CasoUso -> Credito : desembolsar()
+
+    note right of Credito
+      APROBADO -> DESEMBOLSADO
+      -> VIGENTE
+    end note
+
+    CasoUso --> Asesor : crédito desembolsado
+
+else Solicitud no aprobada
+
+    CasoUso --> Asesor : desembolso rechazado
+
+end
+
+@enduml
