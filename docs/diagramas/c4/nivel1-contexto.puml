@@ -1,0 +1,33 @@
+@startuml
+title C4 Nivel 1 - Contexto del Sistema
+
+skinparam shadowing false
+left to right direction
+
+actor "Cliente" as Cliente
+actor "Asesor de Credito" as Asesor
+actor "Comite de Credito" as Comite
+actor "Operador de Cobros" as Cobros
+actor "Gerencia" as Gerencia
+actor "Auditor" as Auditor
+
+rectangle "Sistema de Gestion de Microcredito\nCredito Vecino, S. A." as Sistema {
+}
+
+rectangle "Casa de Cobro Externa" as CasaCobro
+rectangle "Servidor MCP\n(Proyecto Final)" as MCP
+rectangle "Chat / Asistente\n(Proyecto Final)" as Chat
+
+Cliente --> Sistema : Solicita credito
+Asesor --> Sistema : Registra clientes,\nsolicitudes y desembolsos
+Comite --> Sistema : Aprueba o rechaza solicitudes
+Cobros --> Sistema : Registra pagos
+Gerencia --> Sistema : Consulta cierres y cartera en riesgo
+Auditor --> Sistema : Consulta trazabilidad y movimientos
+
+Sistema --> CasaCobro : Gestion de creditos incobrables
+
+MCP --> Sistema : Invoca casos de uso\nfuturos
+Chat --> Sistema : Consulta / ejecuta casos de uso\nfuturos
+
+@enduml
