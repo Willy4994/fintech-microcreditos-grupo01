@@ -1,0 +1,118 @@
+@startuml
+title Vista de Desarrollo - Sistema de Gestion de Microcredito
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "src" {
+
+    package "originacion" {
+        class Cliente
+        class SolicitudCredito
+        class Credito
+        class DesembolsarCredito
+    }
+
+    package "calculo-financiero" {
+        class Dinero
+        class PlanAmortizacion
+        class Cuota
+        class CalculadoraMora
+    }
+
+    package "cartera-cobros" {
+        class Pago
+        class Movimiento
+        class PrelacionPago
+        class Cartera
+        class RegistrarPago
+    }
+
+    package "cierres" {
+        class Cierre
+        class CarteraRiesgo
+        class GenerarCierre
+        class ConsultarCarteraEnRiesgo
+    }
+
+    package "aplicacion" {
+        interface PuertoDesembolsarCredito
+        interface PuertoRegistrarPago
+        interface PuertoGenerarCierre
+        interface PuertoConsultarCartera
+    }
+
+    package "puertos-secundarios" {
+        interface RepositorioClientes
+        interface RepositorioCreditos
+        interface RepositorioMovimientos
+        interface Reloj
+        interface GeneradorIds
+    }
+
+    package "adaptadores-primarios" {
+        class ApiRest
+        class InterfazWeb
+        class ServidorMCP
+        class Chat
+    }
+
+    package "adaptadores-secundarios" {
+        class PostgreSQL
+        class RepositorioMemoria
+        class RelojSistema
+        class RelojFijo
+    }
+}
+
+ApiRest ..> PuertoDesembolsarCredito
+ApiRest ..> PuertoRegistrarPago
+ApiRest ..> PuertoGenerarCierre
+ApiRest ..> PuertoConsultarCartera
+
+InterfazWeb ..> PuertoDesembolsarCredito
+InterfazWeb ..> PuertoRegistrarPago
+
+ServidorMCP ..> PuertoDesembolsarCredito
+ServidorMCP ..> PuertoRegistrarPago
+ServidorMCP ..> PuertoConsultarCartera
+
+Chat ..> PuertoConsultarCartera
+Chat ..> PuertoRegistrarPago
+
+PuertoDesembolsarCredito ..> DesembolsarCredito
+PuertoRegistrarPago ..> RegistrarPago
+PuertoGenerarCierre ..> GenerarCierre
+PuertoConsultarCartera ..> ConsultarCarteraEnRiesgo
+
+DesembolsarCredito ..> Credito
+DesembolsarCredito ..> PlanAmortizacion
+
+RegistrarPago ..> Credito
+RegistrarPago ..> PrelacionPago
+RegistrarPago ..> CalculadoraMora
+
+GenerarCierre ..> Cierre
+GenerarCierre ..> CarteraRiesgo
+
+ConsultarCarteraEnRiesgo ..> CarteraRiesgo
+
+DesembolsarCredito ..> RepositorioCreditos
+RegistrarPago ..> RepositorioCreditos
+RegistrarPago ..> RepositorioMovimientos
+RegistrarPago ..> Reloj
+GenerarCierre ..> RepositorioMovimientos
+GenerarCierre ..> Reloj
+
+PostgreSQL ..|> RepositorioClientes
+PostgreSQL ..|> RepositorioCreditos
+PostgreSQL ..|> RepositorioMovimientos
+
+RepositorioMemoria ..|> RepositorioClientes
+RepositorioMemoria ..|> RepositorioCreditos
+RepositorioMemoria ..|> RepositorioMovimientos
+
+RelojSistema ..|> Reloj
+RelojFijo ..|> Reloj
+
+@enduml
