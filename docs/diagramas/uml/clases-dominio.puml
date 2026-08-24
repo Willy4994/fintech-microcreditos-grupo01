@@ -15,7 +15,7 @@ class SolicitudCredito {
   - fechaSolicitud: Date
   - montoSolicitado: Dinero
   - plazoMeses: number
-  - estado: string
+  - estado: estadoSolicitudCredito
 }
 
 class Credito {
@@ -80,7 +80,7 @@ class Cierre {
 }
 
 class Dinero <<Value Object>> {
-  - monto: Decimal
+  - monto: number
   - moneda: string
 
   + sumar(otro: Dinero): Dinero
