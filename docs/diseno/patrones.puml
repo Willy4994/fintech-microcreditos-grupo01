@@ -1,0 +1,87 @@
+@startuml
+title E3 - Patrones de Diseño Aplicados
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+left to right direction
+
+package "Value Object" {
+    class Dinero <<Value Object>> {
+        - valor: Decimal
+        - moneda: string
+        + sumar(otro: Dinero): Dinero
+        + restar(otro: Dinero): Dinero
+    }
+}
+
+package "Strategy" {
+    interface EstrategiaAmortizacion <<Strategy>> {
+        + generarPlan(): PlanAmortizacion
+    }
+
+    class AmortizacionFrancesa
+
+    EstrategiaAmortizacion <|.. AmortizacionFrancesa
+}
+
+package "State" {
+    interface EstadoCredito <<State>> {
+        + registrarPago(): void
+        + entrarEnMora(): void
+        + cancelar(): void
+    }
+
+    class EstadoSolicitado
+    class EstadoVigente
+    class EstadoEnMora
+    class EstadoCancelado
+
+    class Credito {
+        - estado: EstadoCredito
+        + registrarPago(): void
+        + cambiarEstado(estado: EstadoCredito): void
+    }
+
+    EstadoCredito <|.. EstadoSolicitado
+    EstadoCredito <|.. EstadoVigente
+    EstadoCredito <|.. EstadoEnMora
+    EstadoCredito <|.. EstadoCancelado
+
+    Credito --> EstadoCredito : delega comportamiento
+}
+
+package "Chain of Responsibility" {
+    interface AplicadorPago <<Handler>> {
+        + aplicar(contexto): void
+        + establecerSiguiente(handler): AplicadorPago
+    }
+
+    class AplicadorGastos
+    class AplicadorMoratorio
+    class AplicadorInteresCorriente
+    class AplicadorCapital
+
+    AplicadorPago <|.. AplicadorGastos
+    AplicadorPago <|.. AplicadorMoratorio
+    AplicadorPago <|.. AplicadorInteresCorriente
+    AplicadorPago <|.. AplicadorCapital
+
+    AplicadorGastos --> AplicadorMoratorio : siguiente
+    AplicadorMoratorio --> AplicadorInteresCorriente : siguiente
+    AplicadorInteresCorriente --> AplicadorCapital : siguiente
+}
+
+package "Repository" {
+    interface RepositorioCreditos <<Repository>> {
+        + buscarPorId(id): Credito
+        + guardar(credito: Credito): void
+    }
+
+    class RepositorioCreditoPostgreSQL
+    class RepositorioCreditoMemoria
+
+    RepositorioCreditos <|.. RepositorioCreditoPostgreSQL
+    RepositorioCreditos <|.. RepositorioCreditoMemoria
+}
+
+@enduml
