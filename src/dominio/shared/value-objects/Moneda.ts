@@ -1,0 +1,1 @@
+export type Moneda = "GTQ" | "USD";
