@@ -1,0 +1,48 @@
+import { Dinero } from '../../shared/value-objects/Dinero.js';
+import { Movimiento } from '../entities/Movimiento.js';
+import { AplicadorGastos } from '../chain/AplicadorGastos.js';
+import { AplicadorInteresMoratorio } from '../chain/AplicadorInteresMoratorio.js';
+import { AplicadorInteresCorriente } from '../chain/AplicadorInteresCorriente.js';
+import { AplicadorCapital } from '../chain/AplicadorCapital.js';
+
+export interface DeudaPago {
+  gastos: Dinero;
+  interesMoratorio: Dinero;
+  interesCorriente: Dinero;
+  capital: Dinero;
+}
+
+export interface ResultadoPrelacionPago {
+  movimientos: Movimiento[];
+  excedente: Dinero;
+}
+
+export class PrelacionPago {
+  aplicar(
+    montoPago: Dinero,
+    deuda: DeudaPago
+  ): ResultadoPrelacionPago {
+    const gastos = new AplicadorGastos(deuda.gastos);
+    const moratorio = new AplicadorInteresMoratorio(
+      deuda.interesMoratorio
+    );
+    const interesCorriente = new AplicadorInteresCorriente(
+      deuda.interesCorriente
+    );
+    const capital = new AplicadorCapital(deuda.capital);
+
+    gastos.establecerSiguiente(moratorio);
+    moratorio.establecerSiguiente(interesCorriente);
+    interesCorriente.establecerSiguiente(capital);
+
+    const resultado = gastos.aplicar({
+      restante: montoPago,
+      movimientos: [],
+    });
+
+    return {
+      movimientos: resultado.movimientos,
+      excedente: resultado.restante,
+    };
+  }
+}
