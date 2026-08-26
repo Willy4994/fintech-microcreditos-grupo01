@@ -124,3 +124,21 @@ it('aplica primero la deuda y conserva el excedente a favor del cliente', () => 
     resultado.excedente.obtenerCentavos()
   ).toBe(198812);
 });
+
+it('rechaza un pago cuando la moneda no coincide con la deuda', () => {
+  const servicio = new PrelacionPago();
+
+  expect(() =>
+    servicio.aplicar(
+      Dinero.desdeCentavos(50000, 'GTQ'),
+      {
+        gastos: Dinero.desdeCentavos(0, 'USD'),
+        interesMoratorio: Dinero.desdeCentavos(726, 'USD'),
+        interesCorriente: Dinero.desdeCentavos(27886, 'USD'),
+        capital: Dinero.desdeCentavos(72576, 'USD'),
+      }
+    )
+  ).toThrow(
+    'La moneda del pago debe coincidir con la moneda de todos los conceptos de la deuda.'
+  );
+});

@@ -34,6 +34,8 @@ export class PrelacionPago {
     montoPago: Dinero,
     deuda: DeudaPago
   ): ResultadoPrelacionPago {
+    this.validarMonedas(montoPago, deuda);
+
     const gastos = new AplicadorGastos(deuda.gastos);
     const moratorio = new AplicadorInteresMoratorio(
       deuda.interesMoratorio
@@ -78,6 +80,28 @@ export class PrelacionPago {
         ),
       },
     };
+  }
+
+  private validarMonedas(
+    montoPago: Dinero,
+    deuda: DeudaPago
+  ): void {
+    const monedasDeuda = [
+      deuda.gastos.moneda,
+      deuda.interesMoratorio.moneda,
+      deuda.interesCorriente.moneda,
+      deuda.capital.moneda,
+    ];
+
+    const monedaInvalida = monedasDeuda.some(
+      (moneda) => moneda !== montoPago.moneda
+    );
+
+    if (monedaInvalida) {
+      throw new Error(
+        'La moneda del pago debe coincidir con la moneda de todos los conceptos de la deuda.'
+      );
+    }
   }
 
   private calcularSaldoPendiente(

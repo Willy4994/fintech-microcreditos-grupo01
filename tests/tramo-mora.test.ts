@@ -42,13 +42,48 @@ describe('TramoMora', () => {
       new DiasAtraso(10)
     );
 
-    expect(antes.obtenerTipo()).toBe(TipoTramoMora.MORA_2);
-    expect(despues.obtenerTipo()).toBe(TipoTramoMora.MORA_1);
+    expect(
+      antes.obtenerTipo()
+    ).toBe(TipoTramoMora.MORA_2);
+
+    expect(
+      despues.obtenerTipo()
+    ).toBe(TipoTramoMora.MORA_1);
   });
 
   it('rechaza dias de atraso negativos', () => {
-    expect(() => new DiasAtraso(-1)).toThrow(
-      DiasAtrasoInvalidoException
-    );
+    expect(
+      () => new DiasAtraso(-1)
+    ).toThrow(DiasAtrasoInvalidoException);
+  });
+
+  it('clasifica correctamente los limites entre tramos', () => {
+    expect(
+      TramoMora.desdeDiasAtraso(new DiasAtraso(30)).obtenerTipo()
+    ).toBe(TipoTramoMora.MORA_1);
+
+    expect(
+      TramoMora.desdeDiasAtraso(new DiasAtraso(31)).obtenerTipo()
+    ).toBe(TipoTramoMora.MORA_2);
+
+    expect(
+      TramoMora.desdeDiasAtraso(new DiasAtraso(60)).obtenerTipo()
+    ).toBe(TipoTramoMora.MORA_2);
+
+    expect(
+      TramoMora.desdeDiasAtraso(new DiasAtraso(61)).obtenerTipo()
+    ).toBe(TipoTramoMora.MORA_3);
+
+    expect(
+      TramoMora.desdeDiasAtraso(new DiasAtraso(90)).obtenerTipo()
+    ).toBe(TipoTramoMora.MORA_3);
+
+    expect(
+      TramoMora.desdeDiasAtraso(new DiasAtraso(91)).obtenerTipo()
+    ).toBe(TipoTramoMora.VENCIDO);
+
+    expect(
+      TramoMora.desdeDiasAtraso(new DiasAtraso(120)).obtenerTipo()
+    ).toBe(TipoTramoMora.VENCIDO);
   });
 });
