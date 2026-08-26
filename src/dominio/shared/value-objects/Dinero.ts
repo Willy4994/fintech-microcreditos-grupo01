@@ -1,4 +1,5 @@
 import type { Moneda } from "./Moneda.js";
+import { MonedaIncompatibleException} from "../exceptions/MonedaIncompatibleException.js";
 
 export class Dinero {
     private constructor(
@@ -69,12 +70,12 @@ export class Dinero {
         return this.centavos / 100;
     }
 
-    private validarMismaMoneda(otro: Dinero){
+    private validarMismaMoneda(otro: Dinero):void{
         if (this.moneda !== otro.moneda){
-            throw new Error(
-                `No se puede operar ${this.moneda} con ${otro.moneda}`
+            throw new MonedaIncompatibleException(
+                this.moneda,
+                otro.moneda
             );
         }
     }
-
 }
