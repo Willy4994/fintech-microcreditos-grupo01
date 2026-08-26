@@ -1,5 +1,9 @@
 import { Dinero } from '../../shared/value-objects/Dinero.js';
-import { Movimiento } from '../entities/Movimiento.js';
+import {
+  ConceptoMovimiento,
+  Movimiento,
+} from '../entities/Movimiento.js';
+
 import { AplicadorGastos } from '../chain/AplicadorGastos.js';
 import { AplicadorInteresMoratorio } from '../chain/AplicadorInteresMoratorio.js';
 import { AplicadorInteresCorriente } from '../chain/AplicadorInteresCorriente.js';
@@ -12,9 +16,17 @@ export interface DeudaPago {
   capital: Dinero;
 }
 
+export interface SaldosPendientes {
+  gastos: Dinero;
+  interesMoratorio: Dinero;
+  interesCorriente: Dinero;
+  capital: Dinero;
+}
+
 export interface ResultadoPrelacionPago {
   movimientos: Movimiento[];
   excedente: Dinero;
+  saldosPendientes: SaldosPendientes;
 }
 
 export class PrelacionPago {
@@ -43,6 +55,50 @@ export class PrelacionPago {
     return {
       movimientos: resultado.movimientos,
       excedente: resultado.restante,
+      saldosPendientes: {
+        gastos: this.calcularSaldoPendiente(
+          deuda.gastos,
+          ConceptoMovimiento.GASTOS,
+          resultado.movimientos
+        ),
+        interesMoratorio: this.calcularSaldoPendiente(
+          deuda.interesMoratorio,
+          ConceptoMovimiento.INTERES_MORATORIO,
+          resultado.movimientos
+        ),
+        interesCorriente: this.calcularSaldoPendiente(
+          deuda.interesCorriente,
+          ConceptoMovimiento.INTERES_CORRIENTE,
+          resultado.movimientos
+        ),
+        capital: this.calcularSaldoPendiente(
+          deuda.capital,
+          ConceptoMovimiento.CAPITAL,
+          resultado.movimientos
+        ),
+      },
     };
+  }
+
+  private calcularSaldoPendiente(
+    deuda: Dinero,
+    concepto: ConceptoMovimiento,
+    movimientos: Movimiento[]
+  ): Dinero {
+    const aplicado = movimientos
+      .filter(
+        (movimiento) =>
+          movimiento.obtenerConcepto() === concepto
+      )
+      .reduce(
+        (total, movimiento) =>
+          total + movimiento.obtenerMonto().obtenerCentavos(),
+        0
+      );
+
+    return Dinero.desdeCentavos(
+      deuda.obtenerCentavos() - aplicado,
+      deuda.moneda
+    );
   }
 }

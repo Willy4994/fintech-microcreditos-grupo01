@@ -53,6 +53,11 @@ describe('PrelacionPago', () => {
     expect(
       resultado.excedente.obtenerCentavos()
     ).toBe(0);
+
+    expect(
+  resultado.saldosPendientes.capital.obtenerCentavos()
+).toBe(51188);
+
   });
 });
 
