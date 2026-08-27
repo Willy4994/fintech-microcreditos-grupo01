@@ -1,0 +1,1 @@
+export type BaseConteo = "ACTUAL_360" | "30_360";
