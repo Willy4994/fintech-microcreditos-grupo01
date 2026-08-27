@@ -1,5 +1,6 @@
 import { Decimal} from "decimal.js";
 import type { Moneda } from "./Moneda.js";
+import { MonedaIncompatibleException} from "../exceptions/MonedaIncompatibleException.js";
 
 export class Dinero {
   private constructor(
@@ -82,5 +83,21 @@ export class Dinero {
         "No se pueden operar dineros de monedas diferentes"
       );
     }
-  }
+
+    obtenerCentavos(): number {
+        return this.centavos;;
+    }
+
+    obtenerMonto(): number {
+        return this.centavos / 100;
+    }
+
+    private validarMismaMoneda(otro: Dinero):void{
+        if (this.moneda !== otro.moneda){
+            throw new MonedaIncompatibleException(
+                this.moneda,
+                otro.moneda
+            );
+        }
+    }
 }
