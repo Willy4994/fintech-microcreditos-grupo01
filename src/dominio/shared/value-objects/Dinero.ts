@@ -1,65 +1,87 @@
+import { Decimal} from "decimal.js";
 import type { Moneda } from "./Moneda.js";
 import { MonedaIncompatibleException} from "../exceptions/MonedaIncompatibleException.js";
 
 export class Dinero {
-    private constructor(
-        private readonly centavos:number,
-        public readonly moneda : Moneda
-    ) {
-        if (!Number.isInteger(centavos)) {
-            throw new Error(
-                "Dinero debe representarse mediante centavos enteros"
-            );
-        }
+  private constructor(
+    private readonly centavos: number,
+    public readonly moneda: Moneda
+  ) {
+    if (!Number.isInteger(centavos)) {
+      throw new Error(
+        "El dinero debe almacenarse en centavos enteros"
+      );
+    }
+  }
+
+  static desdeCentavos(
+    centavos: number,
+    moneda: Moneda = "GTQ"
+  ): Dinero {
+    return new Dinero(centavos, moneda);
+  }
+
+  static desdeDecimal(
+    monto: Decimal,
+    moneda: Moneda = "GTQ"
+  ): Dinero {
+    const redondeado = monto.toDecimalPlaces(
+      2,
+      Decimal.ROUND_HALF_UP
+    );
+
+    const centavos = redondeado
+      .times(100)
+      .toNumber();
+
+    if (!Number.isInteger(centavos)) {
+      throw new Error(
+        "El monto no pudo convertirse a centavos enteros"
+      );
     }
 
-    static desdeCentavos(
-        centavos: number,
-        moneda: Moneda = "GTQ"
-    ): Dinero {
-        return new Dinero(centavos, moneda);
-    }
+    return new Dinero(centavos, moneda);
+  }
 
-    static desdeQuetzales(monto:number): Dinero {
-        const centavos = Math.round(monto * 100);
+  obtenerCentavos(): number {
+    return this.centavos;
+  }
 
-        return new Dinero(centavos, "GTQ");
-    }
+  esCero(): boolean {
+    return this.centavos === 0;
+  }
 
-    static cero(moneda: Moneda = "GTQ"): Dinero{
-        return new Dinero(0, moneda);
-    }
+  sumar(otro: Dinero): Dinero {
+    this.validarMismaMoneda(otro);
 
-    sumar(otro:Dinero):Dinero {
-        this.validarMismaMoneda(otro);
+    return new Dinero(
+      this.centavos + otro.centavos,
+      this.moneda
+    );
+  }
 
-        return new Dinero(
-            this.centavos + otro.centavos,
-            this.moneda
-        );
-    }
+  restar(otro: Dinero): Dinero {
+    this.validarMismaMoneda(otro);
 
-    esMayorQue(otro:Dinero):Boolean {
-        this.validarMismaMoneda(otro);
+    return new Dinero(
+      this.centavos - otro.centavos,
+      this.moneda
+    );
+  }
 
-        return this.centavos > otro.centavos;
-    }
+  toDecimal(): Decimal {
+    return new Decimal(this.centavos).dividedBy(100);
+  }
 
-    esMenorQue(otro:Dinero):Boolean {
-        this.validarMismaMoneda(otro);
+  toString(): string {
+    return `${this.moneda} ${this.toDecimal().toFixed(2)}`;
+  }
 
-        return this.centavos < otro.centavos;
-    }
-
-    esIgualA(otro:Dinero):Boolean {
-        return (
-            this.moneda === otro.moneda &&
-            this.centavos === otro.centavos
-        );
-    }
-
-    esCero():Boolean{
-        return this.centavos === 0;
+  private validarMismaMoneda(otro: Dinero): void {
+    if (this.moneda !== otro.moneda) {
+      throw new Error(
+        "No se pueden operar dineros de monedas diferentes"
+      );
     }
 
     obtenerCentavos(): number {
