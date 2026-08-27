@@ -1,4 +1,5 @@
-import Decimal from "decimal.js";
+import { Decimal } from "decimal.js";
+import { TasaMensual } from "./TasaMensual.js";
 
 export class TasaNominalAnual {
   private constructor(

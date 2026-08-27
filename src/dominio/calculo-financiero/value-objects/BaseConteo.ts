@@ -1,1 +1,4 @@
-export type BaseConteo = "ACTUAL_360" | "30_360";
+export type BaseConteo =
+  | "ACTUAL_360"
+  | "ACTUAL_365"
+  | "30_360";

@@ -18,4 +18,20 @@ export interface EstadoCredito {
   rechazar(): EstadoCredito;
 
   desembolsar(): EstadoCredito;
+
+  activar(): EstadoCredito;
+
+  marcarEnMora(): EstadoCredito;
+
+  registrarPago(diasAtrasoRestantes: number): EstadoCredito;
+
+  anular(): EstadoCredito;
+
+  reestructurar(): EstadoCredito;
+
+  curar(): EstadoCredito;
+
+  cancelar(): EstadoCredito;
+
+  declararIncobrable(): EstadoCredito;
 }

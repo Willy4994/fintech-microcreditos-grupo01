@@ -25,16 +25,22 @@ export class PlanAmortizacion {
   }
 
   obtenerUltimaCuota(): Cuota {
-  return this.cuotas[this.cuotas.length - 1];
-}
+    const ultimaCuota = this.cuotas.at(-1);
 
-obtenerSaldoFinal(): Dinero {
-  return this.cuotas[
-    this.cuotas.length - 1
-  ].saldo;
-}
+    if (ultimaCuota === undefined) {
+      throw new Error(
+        "El plan de amortización no contiene cuotas"
+      );
+    }
 
-estaLiquidado(): boolean {
-  return this.obtenerSaldoFinal().esCero();
-}
+    return ultimaCuota;
+  }
+
+  obtenerSaldoFinal(): Dinero {
+    return this.obtenerUltimaCuota().saldo;
+  }
+
+  estaLiquidado(): boolean {
+    return this.obtenerSaldoFinal().esCero();
+  }
 }

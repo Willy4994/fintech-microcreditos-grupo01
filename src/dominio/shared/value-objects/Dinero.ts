@@ -61,6 +61,18 @@ export class Dinero {
         return this.centavos === 0;
     }
 
+    esMenorQue(otro: Dinero): boolean {
+        this.validarMismaMoneda(otro);
+
+        return this.centavos < otro.centavos;
+    }
+
+    esMayorQue(otro: Dinero): boolean {
+        this.validarMismaMoneda(otro);
+
+        return this.centavos > otro.centavos;
+    }
+
     sumar(otro: Dinero): Dinero {
         this.validarMismaMoneda(otro);
 

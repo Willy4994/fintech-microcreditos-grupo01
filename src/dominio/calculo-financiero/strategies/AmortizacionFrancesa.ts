@@ -1,11 +1,11 @@
-import Decimal from "decimal.js";
+import { Decimal } from "decimal.js";
 
 import { Dinero } from "../../shared/value-objects/Dinero.js";
 import { TasaMensual } from "../value-objects/TasaMensual.js";
 import { Plazo } from "../value-objects/Plazo.js";
 import { Cuota } from "../entities/Cuota.js";
 import { PlanAmortizacion } from "../entities/PlanAmortizacion.js";
-import { MetodoAmortizacion } from "./MetodoAmortizacion.js";
+import type { MetodoAmortizacion } from "./MetodoAmortizacion.js";
 
 export class AmortizacionFrancesa
   implements MetodoAmortizacion {

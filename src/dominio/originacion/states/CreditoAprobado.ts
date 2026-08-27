@@ -8,6 +8,9 @@ import { EstadoCreditoBase } from
 import { CreditoDesembolsado } from
   "./CreditoDesembolsado.js";
 
+import { CreditoAnulado } from
+  "./CreditoAnulado.js";
+
 export class CreditoAprobado
   extends EstadoCreditoBase {
 
@@ -16,5 +19,9 @@ export class CreditoAprobado
 
   override desembolsar(): EstadoCreditoBase {
     return new CreditoDesembolsado();
+  }
+
+  override anular(): EstadoCreditoBase {
+    return new CreditoAnulado();
   }
 }
