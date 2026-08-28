@@ -118,4 +118,4 @@ docs/
 
 ## Uso de inteligencia artificial
 
-Se utilizó OpenAI Codex como herramienta de apoyo para revisar requisitos, detectar errores de compilación, proponer pruebas, comprobar coherencia entre código y documentación y asistir en la redacción técnica. Las decisiones, reglas implementadas y resultados deben ser revisados, comprendidos y defendidos por los integrantes del grupo.
+Se utilizaron herramientas de inteligencia artificial, principalmente ChatGPT, y Codex como apoyo durante el desarrollo del proyecto para analizar los requisitos proporcionados, resolver dudas técnicas, identificar posibles errores de compilación, apoyar en la elaboración y revisión de pruebas, verificar la coherencia entre el diseño, el código y la documentación, y asistir en la redacción técnica. Las decisiones de diseño, implementación y documentación fueron revisadas y comprendidas por cada uno de nosotros que conformamos el equipo.
