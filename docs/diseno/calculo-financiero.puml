@@ -1,0 +1,115 @@
+@startuml
+title E3 - Diseño detallado del módulo de Cálculo Financiero
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+left to right direction
+
+package "Calculo Financiero" {
+
+    class Dinero <<Value Object>> {
+        - centavos: number
+        + moneda: Moneda
+        + sumar(otro: Dinero): Dinero
+        + restar(otro: Dinero): Dinero
+        + toDecimal(): Decimal
+        + esCero(): boolean
+    }
+
+    class Cuota {
+        + numero: number
+        + monto: Dinero
+        + interes: Dinero
+        + amortizacionCapital: Dinero
+        + saldo: Dinero
+    }
+
+    class PlanAmortizacion {
+        + cuotas: Cuota[]
+        + obtenerUltimaCuota(): Cuota
+        + obtenerSaldoFinal(): Dinero
+    }
+
+    interface MetodoAmortizacion <<Strategy>> {
+        + calcular(
+            capital: Dinero,
+            tasaMensual: TasaMensual,
+            plazo: Plazo
+          ): PlanAmortizacion
+    }
+
+    class AmortizacionFrancesa {
+        + calcular(
+            capital: Dinero,
+            tasaMensual: TasaMensual,
+            plazo: Plazo
+          ): PlanAmortizacion
+    }
+
+    class CalculadoraMora {
+        + calcularInteresMoratorio(
+            capitalEnMora: Dinero,
+            tasaMoratoria: TasaNominalAnual,
+            baseConteo: BaseConteo,
+            diasAtraso: DiasAtraso
+          ): Dinero
+    }
+
+    enum TramoMora {
+        SIN_MORA
+        MORA_1
+        MORA_2
+        MORA_3
+        VENCIDO
+    }
+}
+
+MetodoAmortizacion <|.. AmortizacionFrancesa
+
+PlanAmortizacion "1" *-- "1..*" Cuota : contiene
+
+PlanAmortizacion --> Dinero
+Cuota --> Dinero
+
+AmortizacionFrancesa --> Dinero
+AmortizacionFrancesa --> PlanAmortizacion
+
+CalculadoraMora --> Dinero
+TramoMora ..> DiasAtraso
+
+note right of Dinero
+Objeto de Valor.
+Todo importe monetario
+se representa con Dinero.
+El number representa siempre
+centavos enteros.
+end note
+
+note right of AmortizacionFrancesa
+Strategy para el sistema frances.
+
+Debe garantizar:
+- cuota fija
+- redondeo a 2 decimales
+- ajuste de ultima cuota
+- suma amortizaciones = capital
+- saldo final = 0.00
+end note
+
+note right of CalculadoraMora
+El interes moratorio se calcula
+UNICAMENTE sobre capital en mora.
+
+No se calculan intereses
+sobre intereses.
+end note
+
+note bottom of TramoMora
+El tramo NO representa el estado
+del credito.
+
+Es una clasificacion derivada
+de los dias de atraso.
+end note
+
+@enduml

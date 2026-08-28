@@ -1,0 +1,40 @@
+@startuml
+title C4 Nivel 2 - Contenedores
+
+skinparam shadowing false
+left to right direction
+
+actor "Asesor / Operador / Gerencia" as Usuario
+
+rectangle "Sistema de Gestion de Microcredito" {
+
+    rectangle "Aplicacion Web\nFuturo - Proyecto Final" as WebApp
+
+    rectangle "API REST\nFuturo - Proyecto Final\nAdaptador primario" as API
+
+    rectangle "Aplicacion / Casos de Uso\nTypeScript" as Aplicacion
+
+    rectangle "Nucleo de Dominio\nTypeScript strict\nSin dependencias de infraestructura" as Dominio
+
+    database "PostgreSQL\nFuturo - Proyecto Final\nAdaptador secundario" as DB
+
+    rectangle "Servidor MCP\nProyecto Final\nAdaptador primario" as MCP
+
+    rectangle "Chat / Asistente\nProyecto Final\nAdaptador primario" as Chat
+}
+
+Usuario --> WebApp : Usa el sistema
+
+WebApp --> API : HTTPS / JSON
+
+API --> Aplicacion : Invoca casos de uso
+
+Aplicacion --> Dominio : Ejecuta reglas de negocio
+
+Aplicacion --> DB : Puertos de repositorio
+
+MCP --> Aplicacion : Invoca los mismos\ncasos de uso
+
+Chat --> MCP : Solicita operaciones\no consultas
+
+@enduml

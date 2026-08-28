@@ -1,0 +1,79 @@
+@startuml
+title Ciclo de vida del crédito
+
+[*] --> Solicitado
+
+state Solicitado
+state Aprobado
+state Desembolsado
+state Vigente
+state EnMora
+state Reestructurado
+state Cancelado
+state Rechazado
+state Anulado
+state Incobrable
+
+Solicitado --> Aprobado : Comité aprueba\n[cumple política de crédito]
+Solicitado --> Rechazado : Comité rechaza
+
+Aprobado --> Desembolsado : Se desembolsa\n[capital entregado al cliente]
+Aprobado --> Anulado : Cliente desiste / expira\n[antes del desembolso]
+
+Desembolsado --> Vigente : Inicia plan
+
+Vigente --> EnMora : Vence cuota impagada\n[diasAtraso >= 1]
+Vigente --> Cancelado : Paga última cuota\n[saldo = 0.00 exacto]
+
+EnMora --> Vigente : Paga TODO lo vencido\n[diasAtraso = 0]
+
+EnMora --> EnMora : Paga PARTE de lo vencido\n[diasAtraso baja pero > 0]
+
+EnMora --> EnMora : Aumenta atraso\n[diasAtraso 91..120]\n/tramo = Vencido
+
+EnMora --> Reestructurado : Acuerdo nuevas condiciones\n[comité autoriza]
+
+EnMora --> Incobrable : Supera 120 días sin arreglo\n[diasAtraso > 120]
+
+Reestructurado --> Vigente : Cumple nuevo plan\n[según política de cura]
+
+Reestructurado --> EnMora : Se atrasa en nuevo plan\n[diasAtraso >= 1]
+
+Reestructurado --> Cancelado : Paga última cuota nueva\n[saldo = 0.00 exacto]
+
+Rechazado --> [*]
+Anulado --> [*]
+Cancelado --> [*]
+Incobrable --> [*]
+
+note right of EnMora
+  EN_MORA es el único estado de mora.
+
+  El tramo se deriva de diasAtraso:
+  1-30   = Mora 1
+  31-60  = Mora 2
+  61-90  = Mora 3
+  91-120 = Vencido
+
+  Los tramos NO son estados.
+end note
+
+note right of Reestructurado
+  La reestructuración no borra
+  el historial del crédito.
+
+  Aunque vuelva a VIGENTE,
+  continúa marcado en riesgo
+  para cartera en riesgo.
+end note
+
+note right of Incobrable
+  Baja contable.
+  No implica perdón de deuda.
+
+  Recuperaciones posteriores
+  se registran por separado y
+  el crédito no vuelve a cartera.
+end note
+
+@enduml

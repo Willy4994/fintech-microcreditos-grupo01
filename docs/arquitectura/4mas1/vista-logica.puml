@@ -1,0 +1,66 @@
+@startuml
+title Vista Lógica — Sistema de Gestión de Microcrédito
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "Sistema de Gestión de Microcrédito" {
+
+    package "Originación" {
+        class Cliente
+        class SolicitudCredito
+        class Credito
+
+        Cliente "1" -- "0..*" SolicitudCredito : realiza
+        SolicitudCredito "1" --> "0..1" Credito : origina
+    }
+
+    package "Cálculo Financiero" {
+        class Dinero <<Value Object>>
+        class PlanAmortizacion
+        class Cuota
+        class CalculadoraMora
+
+        PlanAmortizacion "1" *-- "1..*" Cuota
+        PlanAmortizacion --> Dinero
+        Cuota --> Dinero
+        CalculadoraMora --> Dinero
+    }
+
+    package "Cartera y Cobros" {
+        class Pago
+        class Movimiento
+        class PrelacionPago
+        class Cartera
+
+        Pago --> PrelacionPago : aplica
+        PrelacionPago --> Movimiento : genera
+        Cartera --> Credito : administra
+    }
+
+    package "Cierres" {
+        class Cierre
+        class CarteraRiesgo
+
+        Cierre --> CarteraRiesgo : calcula
+        CarteraRiesgo --> Cartera : consulta
+    }
+
+    package "Contratos / Aplicación" {
+        interface DesembolsarCredito
+        interface RegistrarPago
+        interface GenerarCierre
+        interface ConsultarCarteraEnRiesgo
+    }
+
+    Credito --> PlanAmortizacion : posee
+    Credito --> Pago : recibe
+    Credito --> Movimiento : registra
+
+    DesembolsarCredito ..> Credito
+    RegistrarPago ..> Pago
+    GenerarCierre ..> Cierre
+    ConsultarCarteraEnRiesgo ..> CarteraRiesgo
+}
+
+@enduml

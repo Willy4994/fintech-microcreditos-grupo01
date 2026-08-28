@@ -1,0 +1,102 @@
+@startuml
+title E3 - Patrones de Diseño Aplicados
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+left to right direction
+
+package "Value Object" {
+    class Dinero <<Value Object>> {
+        - centavos: number
+        - moneda: Moneda
+        + sumar(otro: Dinero): Dinero
+        + restar(otro: Dinero): Dinero
+        + toDecimal(): Decimal
+    }
+}
+
+package "Strategy" {
+    interface MetodoAmortizacion <<Strategy>> {
+        + calcular(capital, tasaMensual, plazo): PlanAmortizacion
+    }
+
+    class AmortizacionFrancesa
+
+    MetodoAmortizacion <|.. AmortizacionFrancesa
+}
+
+package "State" {
+    interface EstadoCredito <<State>> {
+        + registrarPago(): void
+        + entrarEnMora(): void
+        + cancelar(): void
+    }
+
+    class CreditoSolicitado
+    class CreditoAprobado
+    class CreditoDesembolsado
+    class CreditoVigente
+    class CreditoEnMora
+    class CreditoReestructurado
+    class CreditoCancelado
+    class CreditoRechazado
+    class CreditoAnulado
+    class CreditoIncobrable
+
+    class Credito {
+        - estado: EstadoCredito
+        - historialEstados: CambioEstadoCredito[]
+        + registrarPago(diasRestantes, contexto): void
+        + reestructurar(contexto): void
+        + declararIncobrable(contexto): void
+    }
+
+    EstadoCredito <|.. CreditoSolicitado
+    EstadoCredito <|.. CreditoAprobado
+    EstadoCredito <|.. CreditoDesembolsado
+    EstadoCredito <|.. CreditoVigente
+    EstadoCredito <|.. CreditoEnMora
+    EstadoCredito <|.. CreditoReestructurado
+    EstadoCredito <|.. CreditoCancelado
+    EstadoCredito <|.. CreditoRechazado
+    EstadoCredito <|.. CreditoAnulado
+    EstadoCredito <|.. CreditoIncobrable
+
+    Credito --> EstadoCredito : delega comportamiento
+}
+
+package "Chain of Responsibility" {
+    interface AplicadorPago <<Handler>> {
+        + aplicar(contexto): void
+        + establecerSiguiente(handler): AplicadorPago
+    }
+
+    class AplicadorGastos
+    class AplicadorMoratorio
+    class AplicadorInteresCorriente
+    class AplicadorCapital
+
+    AplicadorPago <|.. AplicadorGastos
+    AplicadorPago <|.. AplicadorMoratorio
+    AplicadorPago <|.. AplicadorInteresCorriente
+    AplicadorPago <|.. AplicadorCapital
+
+    AplicadorGastos --> AplicadorMoratorio : siguiente
+    AplicadorMoratorio --> AplicadorInteresCorriente : siguiente
+    AplicadorInteresCorriente --> AplicadorCapital : siguiente
+}
+
+package "Repository" {
+    interface RepositorioCreditos <<Repository>> {
+        + buscarPorId(id): Credito
+        + guardar(credito: Credito): void
+    }
+
+    class RepositorioCreditoPostgreSQL
+    class RepositorioCreditoMemoria
+
+    RepositorioCreditos <|.. RepositorioCreditoPostgreSQL
+    RepositorioCreditos <|.. RepositorioCreditoMemoria
+}
+
+@enduml

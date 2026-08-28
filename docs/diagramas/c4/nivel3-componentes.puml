@@ -1,0 +1,81 @@
+@startuml
+title C4 Nivel 3 - Componentes del Backend
+
+skinparam shadowing false
+left to right direction
+
+actor "Adaptadores Primarios futuros\nAPI REST / MCP / Chat\nProyecto Final" as Primarios
+
+rectangle "Backend - Sistema de Gestion de Microcredito" {
+
+    package "Puertos Primarios / Casos de Uso" {
+        component "DesembolsarCredito" as Desembolsar
+        component "RegistrarPago" as RegistrarPago
+        component "GenerarCierre" as GenerarCierre
+        component "ConsultarCarteraEnRiesgo" as ConsultarRiesgo
+    }
+
+    package "Originacion" {
+        component "SolicitudCredito" as Solicitud
+        component "Credito" as Credito
+    }
+
+    package "Calculo Financiero" {
+        component "Dinero" as Dinero
+        component "PlanAmortizacion" as Plan
+        component "CalculadoraMora" as Mora
+    }
+
+    package "Cartera y Cobros" {
+        component "PrelacionPago" as Prelacion
+        component "Cartera" as Cartera
+    }
+
+    package "Cierres" {
+        component "CierreDiario" as CierreDiario
+        component "CierreMensual" as CierreMensual
+    }
+
+    package "Puertos Secundarios" {
+        interface "RepositorioCreditos" as RepoCreditos
+        interface "RepositorioMovimientos" as RepoMovimientos
+        interface "Reloj" as Reloj
+    }
+}
+
+database "PostgreSQL\nFuturo - Proyecto Final\nAdaptador secundario" as DB
+
+Primarios --> Desembolsar
+Primarios --> RegistrarPago
+Primarios --> GenerarCierre
+Primarios --> ConsultarRiesgo
+
+Desembolsar --> Solicitud
+Desembolsar --> Credito
+Desembolsar --> Plan
+
+RegistrarPago --> Credito
+RegistrarPago --> Mora
+RegistrarPago --> Prelacion
+
+GenerarCierre --> CierreDiario
+GenerarCierre --> CierreMensual
+GenerarCierre --> Cartera
+GenerarCierre --> Reloj
+
+ConsultarRiesgo --> Cartera
+
+Plan --> Dinero
+Mora --> Dinero
+Prelacion --> Dinero
+
+Desembolsar --> RepoCreditos
+RegistrarPago --> RepoCreditos
+RegistrarPago --> RepoMovimientos
+GenerarCierre --> RepoCreditos
+GenerarCierre --> RepoMovimientos
+
+RepoCreditos --> DB
+RepoMovimientos --> DB
+
+@enduml

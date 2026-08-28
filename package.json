@@ -1,0 +1,36 @@
+{
+  "name": "fintech-microcreditos-grupo01",
+  "version": "1.0.0",
+  "description": "Este software es para una institución de microfinanzas guatemalteca que otorgará microcréditos a personas y pequeños negocios que no acceden fácilmente a la banca tradicional.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Willy4994/fintech-microcreditos-grupo01.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Willy4994/fintech-microcreditos-grupo01/issues"
+  },
+  "homepage": "https://github.com/Willy4994/fintech-microcreditos-grupo01#readme",
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "date-fns": "^4.4.0",
+    "decimal.js": "^10.6.0",
+    "zod": "^4.4.3"
+  }
+}

@@ -1,0 +1,320 @@
+openapi: 3.1.0
+info:
+  title: Crédito Vecino - Contrato API
+  version: 1.0.0
+  description: Contrato de diseño del Proyecto 1; no implica un servidor implementado.
+servers:
+  - url: https://api.creditovecino.example/v1
+    description: Referencia futura
+tags:
+  - name: Clientes
+  - name: Solicitudes
+  - name: Créditos
+  - name: Pagos
+  - name: Cierres
+  - name: Cartera
+paths:
+  /clientes:
+    post:
+      tags: [Clientes]
+      summary: Registrar cliente
+      operationId: registrarCliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ClienteEntrada'}
+      responses:
+        '201':
+          description: Cliente registrado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Cliente'}
+        '400': {$ref: '#/components/responses/SolicitudInvalida'}
+        '409': {$ref: '#/components/responses/Conflicto'}
+    get:
+      tags: [Clientes]
+      summary: Consultar clientes
+      operationId: consultarClientes
+      responses:
+        '200':
+          description: Clientes registrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Cliente'}
+  /solicitudes:
+    post:
+      tags: [Solicitudes]
+      summary: Solicitar crédito
+      operationId: solicitarCredito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SolicitudEntrada'}
+      responses:
+        '201':
+          description: Solicitud registrada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SolicitudCredito'}
+        '400': {$ref: '#/components/responses/SolicitudInvalida'}
+  /solicitudes/{solicitudId}/decision:
+    post:
+      tags: [Solicitudes]
+      summary: Aprobar o rechazar una solicitud
+      operationId: decidirSolicitud
+      parameters:
+        - {$ref: '#/components/parameters/SolicitudId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, motivo]
+              properties:
+                decision: {type: string, enum: [APROBAR, RECHAZAR]}
+                motivo: {type: string, minLength: 1}
+      responses:
+        '200':
+          description: Solicitud decidida
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SolicitudCredito'}
+        '404': {$ref: '#/components/responses/NoEncontrado'}
+        '409': {$ref: '#/components/responses/Conflicto'}
+  /creditos/{creditoId}:
+    get:
+      tags: [Créditos]
+      summary: Consultar crédito
+      operationId: consultarCredito
+      parameters:
+        - {$ref: '#/components/parameters/CreditoId'}
+      responses:
+        '200':
+          description: Crédito encontrado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Credito'}
+        '404': {$ref: '#/components/responses/NoEncontrado'}
+  /creditos/{creditoId}/desembolso:
+    post:
+      tags: [Créditos]
+      summary: Desembolsar un crédito aprobado
+      operationId: desembolsarCredito
+      parameters:
+        - {$ref: '#/components/parameters/CreditoId'}
+      responses:
+        '200':
+          description: Crédito desembolsado y plan generado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Credito'}
+        '404': {$ref: '#/components/responses/NoEncontrado'}
+        '409': {$ref: '#/components/responses/Conflicto'}
+  /creditos/{creditoId}/pagos:
+    post:
+      tags: [Pagos]
+      summary: Registrar pago aplicando la prelación obligatoria
+      operationId: registrarPago
+      parameters:
+        - {$ref: '#/components/parameters/CreditoId'}
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: {type: string, minLength: 1}
+          description: Identifica de forma única el intento de pago.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PagoEntrada'}
+      responses:
+        '201':
+          description: Pago aplicado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ResultadoPago'}
+        '200':
+          description: Resultado previamente creado para la misma clave
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ResultadoPago'}
+        '400': {$ref: '#/components/responses/SolicitudInvalida'}
+        '404': {$ref: '#/components/responses/NoEncontrado'}
+        '409': {$ref: '#/components/responses/Conflicto'}
+  /cierres:
+    post:
+      tags: [Cierres]
+      summary: Generar cierre diario o mensual idempotente
+      operationId: generarCierre
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CierreEntrada'}
+      responses:
+        '201':
+          description: Cierre generado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Cierre'}
+        '200':
+          description: Cierre previamente generado para el mismo corte
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Cierre'}
+        '400': {$ref: '#/components/responses/SolicitudInvalida'}
+  /cartera/riesgo:
+    get:
+      tags: [Cartera]
+      summary: Consultar cartera en riesgo a una fecha de corte
+      operationId: consultarCarteraEnRiesgo
+      parameters:
+        - name: fechaCorte
+          in: query
+          required: true
+          schema: {type: string, format: date}
+      responses:
+        '200':
+          description: Indicador y monto incobrable del período
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CarteraRiesgo'}
+        '400': {$ref: '#/components/responses/SolicitudInvalida'}
+components:
+  parameters:
+    CreditoId:
+      name: creditoId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    SolicitudId:
+      name: solicitudId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+  responses:
+    SolicitudInvalida:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorApi'}
+    NoEncontrado:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorApi'}
+    Conflicto:
+      description: Conflicto o transición de dominio inválida
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorApi'}
+  schemas:
+    Dinero:
+      type: object
+      required: [centavos, moneda]
+      properties:
+        centavos: {type: integer, description: Importe en unidad mínima}
+        moneda: {type: string, enum: [GTQ, USD]}
+    ClienteEntrada:
+      type: object
+      required: [nombre, documentoIdentificacion, email]
+      properties:
+        nombre: {type: string, minLength: 1}
+        documentoIdentificacion: {type: string, minLength: 1}
+        email: {type: string, format: email}
+    Cliente:
+      allOf:
+        - {$ref: '#/components/schemas/ClienteEntrada'}
+        - type: object
+          required: [id]
+          properties:
+            id: {type: string}
+    SolicitudEntrada:
+      type: object
+      required: [clienteId, montoSolicitado, plazoMeses]
+      properties:
+        clienteId: {type: string}
+        montoSolicitado: {$ref: '#/components/schemas/Dinero'}
+        plazoMeses: {type: integer, minimum: 3, maximum: 24}
+    SolicitudCredito:
+      allOf:
+        - {$ref: '#/components/schemas/SolicitudEntrada'}
+        - type: object
+          required: [id, estado]
+          properties:
+            id: {type: string}
+            estado:
+              type: string
+              enum: [PENDIENTE, EN_EVALUACION, APROBADA, RECHAZADA, ANULADA]
+    Credito:
+      type: object
+      required: [id, clienteId, solicitudId, capital, plazoMeses, estado, diasAtraso, reestructurado]
+      properties:
+        id: {type: string}
+        clienteId: {type: string}
+        solicitudId: {type: string}
+        capital: {$ref: '#/components/schemas/Dinero'}
+        plazoMeses: {type: integer, minimum: 3, maximum: 24}
+        estado:
+          type: string
+          enum: [SOLICITADO, APROBADO, RECHAZADO, DESEMBOLSADO, VIGENTE, EN_MORA, REESTRUCTURADO, CANCELADO, ANULADO, INCOBRABLE]
+        diasAtraso: {type: integer, minimum: 0}
+        reestructurado: {type: boolean}
+    PagoEntrada:
+      type: object
+      required: [monto, fecha]
+      properties:
+        monto: {$ref: '#/components/schemas/Dinero'}
+        fecha: {type: string, format: date}
+    ResultadoPago:
+      type: object
+      required: [pagoId, duplicado, movimientos, excedente]
+      properties:
+        pagoId: {type: string}
+        duplicado: {type: boolean}
+        movimientos:
+          type: array
+          items:
+            type: object
+            required: [concepto, monto]
+            properties:
+              concepto: {type: string, enum: [GASTOS, INTERES_MORATORIO, INTERES_CORRIENTE, CAPITAL]}
+              monto: {$ref: '#/components/schemas/Dinero'}
+        excedente: {$ref: '#/components/schemas/Dinero'}
+    CierreEntrada:
+      type: object
+      required: [fechaCorte, tipo]
+      properties:
+        fechaCorte: {type: string, format: date}
+        tipo: {type: string, enum: [DIARIO, MENSUAL]}
+    Cierre:
+      allOf:
+        - {$ref: '#/components/schemas/CierreEntrada'}
+        - type: object
+          required: [id]
+          properties:
+            id: {type: string}
+    CarteraRiesgo:
+      type: object
+      required: [fechaCorte, carteraActiva, carteraEnRiesgo, porcentajeRiesgo, montoDeclaradoIncobrable]
+      properties:
+        fechaCorte: {type: string, format: date}
+        carteraActiva: {$ref: '#/components/schemas/Dinero'}
+        carteraEnRiesgo: {$ref: '#/components/schemas/Dinero'}
+        porcentajeRiesgo: {type: string, example: '0.0700'}
+        montoDeclaradoIncobrable: {$ref: '#/components/schemas/Dinero'}
+    ErrorApi:
+      type: object
+      required: [codigo, mensaje, detalles, correlacionId]
+      properties:
+        codigo: {type: string, example: TRANSICION_CREDITO_INVALIDA}
+        mensaje: {type: string}
+        detalles:
+          type: array
+          items: {type: string}
+        correlacionId: {type: string}

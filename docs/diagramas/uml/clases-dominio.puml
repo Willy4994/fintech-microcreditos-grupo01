@@ -1,0 +1,196 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+
+class Cliente {
+  - id: string
+  - nombre: string
+  - documentoIdentificacion: string
+  - telefono: string
+  - direccion: string
+}
+
+class SolicitudCredito {
+  - id: string
+  - fechaSolicitud: Date
+  - montoSolicitado: Dinero
+  - plazoMeses: number
+  - estado: estadoSolicitudCredito
+}
+
+class Credito {
+  + id: CreditoId
+  + clienteId: ClienteId
+  + solicitudId: SolicitudCreditoId
+  + capital: Dinero
+  - plazoMeses: number
+  - estado: EstadoCredito
+  - fueReestructurado: boolean
+  - diasAtraso: DiasAtraso
+  - historialEstados: CambioEstadoCredito[]
+
+  + aprobar(cumplePolitica, contexto): void
+  + rechazar(contexto): void
+  + desembolsar(capitalEntregado, contexto): void
+  + activar(contexto): void
+  + marcarEnMora(dias, contexto): void
+  + registrarPago(diasRestantes, contexto): void
+  + reestructurar(comiteAutoriza, contexto): void
+  + curar(cumplePoliticaCura, contexto): void
+  + cancelar(saldoCapitalRestante, contexto): void
+  + anular(contexto): void
+  + declararIncobrable(contexto): void
+}
+
+class PlanAmortizacion {
+  + cuotas: Cuota[]
+  + obtenerUltimaCuota(): Cuota
+  + obtenerSaldoFinal(): Dinero
+}
+
+class Cuota {
+  + numero: number
+  + monto: Dinero
+  + interes: Dinero
+  + amortizacionCapital: Dinero
+  + saldo: Dinero
+}
+
+class Pago {
+  - id: string
+  - fecha: Date
+  - monto: Dinero
+  - claveIdempotencia: string
+
+  + aplicar(): void
+}
+
+class Movimiento {
+  - id: string
+  - fecha: Date
+  - concepto: string
+  - monto: Dinero
+  - tipo: TipoMovimiento
+}
+
+
+class Cierre {
+  - id: string
+  - fechaCorte: Date
+  - tipo: TipoCierre
+  - carteraActiva: Dinero
+  - carteraEnRiesgo: Dinero
+  - porcentajeRiesgo: Decimal
+}
+
+class Dinero <<Value Object>> {
+  - centavos: number
+  + moneda: Moneda
+
+  + sumar(otro: Dinero): Dinero
+  + restar(otro: Dinero): Dinero
+  + esMenorQue(otro: Dinero): boolean
+  + esMayorQue(otro: Dinero): boolean
+  + toDecimal(): Decimal
+  + esCero(): boolean
+}
+
+class CalculadoraMora <<Domain Service>> {
+  + calcularInteresMoratorio(
+      capitalEnMora: Dinero,
+      tasaDiaria: Decimal,
+      diasAtraso: number
+    ): Dinero
+
+  + clasificarTramo(diasAtraso: number): TramoMora
+}
+
+class PrelacionPago <<Domain Service>> {
+  + aplicar(pago: Dinero, cuota: Cuota): ResultadoAplicacionPago
+}
+
+class Cartera {
+  - creditos: PosicionCartera[]
+  + agregarCredito(posicion: PosicionCartera): void
+  + obtenerCreditos(): PosicionCartera[]
+}
+
+class CalculadoraCarteraRiesgo <<Domain Service>> {
+  + calcular(cartera: Cartera): ResultadoCarteraRiesgo
+}
+
+class ProcesadorPago <<Domain Service>> {
+  + procesar(pago, deuda, clavesProcesadas): ResultadoProcesamientoPago
+}
+
+class DesembolsarCredito <<Application Service>> {
+  + ejecutar(solicitudId, contexto): Credito
+}
+
+class CambioEstadoCredito {
+  + estadoAnterior: EstadoCredito
+  + estadoNuevo: EstadoCredito
+  + fecha: Date
+  + actor: string
+  + motivo: string
+}
+
+enum EstadoCredito {
+  SOLICITADO
+  APROBADO
+  DESEMBOLSADO
+  VIGENTE
+  EN_MORA
+  REESTRUCTURADO
+  CANCELADO
+  RECHAZADO
+  ANULADO
+  INCOBRABLE
+}
+
+enum TramoMora {
+  SIN_MORA
+  MORA_1
+  MORA_2
+  MORA_3
+  VENCIDO
+}
+
+enum TipoMovimiento {
+  DESEMBOLSO
+  CAPITAL
+  INTERES_CORRIENTE
+  INTERES_MORATORIO
+  GASTO
+  RECUPERACION_INCOBRABLE
+}
+
+enum TipoCierre {
+  DIARIO
+  MENSUAL
+}
+
+Cliente "1" -- "0..*" SolicitudCredito : realiza >
+SolicitudCredito "1" --> "0..1" Credito : origina >
+Credito "1" *-- "1" PlanAmortizacion
+PlanAmortizacion "1" *-- "1..*" Cuota
+Credito "1" -- "0..*" Pago
+Pago "1" -- "1..*" Movimiento
+Credito "1" -- "0..*" Movimiento
+Cierre "1" -- "0..*" Movimiento : consolida >
+Credito --> EstadoCredito
+Credito "1" *-- "1..*" CambioEstadoCredito
+CalculadoraMora --> TramoMora
+CalculadoraCarteraRiesgo --> Cartera
+ProcesadorPago --> PrelacionPago
+DesembolsarCredito --> Credito
+DesembolsarCredito --> PlanAmortizacion
+
+PlanAmortizacion ..> Dinero
+Credito ..> Dinero
+Cuota ..> Dinero
+Pago ..> Dinero
+Movimiento ..> Dinero
+Cierre ..> Dinero
+
+@enduml

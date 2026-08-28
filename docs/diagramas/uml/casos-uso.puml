@@ -1,0 +1,46 @@
+@startuml
+left to right direction
+
+actor Cliente
+actor "Asesor de Crédito" as Asesor
+actor "Comité de Crédito" as Comite
+actor "Operador de Cobros" as Cobros
+actor Gerencia
+actor "Proceso de Cierre" as ProcesoCierre
+
+rectangle "Sistema de Gestión de Microcrédito" {
+
+  usecase "Registrar cliente" as UC1
+  usecase "Solicitar crédito" as UC2
+  usecase "Evaluar solicitud" as UC3
+  usecase "Aprobar / rechazar solicitud" as UC4
+  usecase "Desembolsar crédito" as UC5
+  usecase "Generar plan de amortización" as UC6
+  usecase "Registrar pago de cuota" as UC7
+  usecase "Calcular mora" as UC8
+  usecase "Aplicar prelación de pago" as UC9
+  usecase "Generar cierre diario / mensual" as UC10
+  usecase "Consultar cartera en riesgo" as UC11
+}
+
+Cliente --> UC2
+
+Asesor --> UC1
+Asesor --> UC2
+Asesor --> UC3
+Asesor --> UC5
+
+Comite --> UC4
+
+Cobros --> UC7
+
+Gerencia --> UC11
+
+ProcesoCierre --> UC10
+
+UC5 .> UC6 : <<include>>
+UC7 .> UC8 : <<include>>
+UC7 .> UC9 : <<include>>
+UC10 .> UC11 : <<include>>
+
+@enduml

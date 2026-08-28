@@ -1,0 +1,75 @@
+@startuml
+title Proceso de originación del crédito
+
+start
+
+:Registrar cliente;
+
+:Crear solicitud de crédito;
+
+:Validar datos y documentación;
+
+if (¿Solicitud completa?) then (Sí)
+
+  :Evaluar solicitud;
+
+  if (¿Cumple política de crédito?) then (Sí)
+
+    :Enviar a comité;
+
+    if (¿Comité aprueba?) then (Sí)
+
+      :Marcar solicitud como APROBADA;
+
+      if (¿Cliente desiste o expira?) then (Sí)
+
+        :Anular solicitud;
+        stop
+
+      else (No)
+
+        :Desembolsar capital;
+
+        :Crear crédito;
+
+        :Asignar política vigente
+        a la fecha de otorgamiento;
+
+        :Generar plan de amortización
+        mediante sistema francés;
+
+        :Registrar movimiento
+        de desembolso;
+
+        :Cambiar estado a DESEMBOLSADO;
+
+        :Activar crédito como VIGENTE;
+
+        stop
+
+      endif
+
+    else (No)
+
+      :Marcar solicitud como RECHAZADA;
+      stop
+
+    endif
+
+  else (No)
+
+    :Registrar motivo de incumplimiento;
+    :Marcar solicitud como RECHAZADA;
+    stop
+
+  endif
+
+else (No)
+
+  :Solicitar información faltante;
+  :Mantener solicitud pendiente;
+  stop
+
+endif
+
+@enduml

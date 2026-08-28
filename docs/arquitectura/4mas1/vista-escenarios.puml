@@ -1,0 +1,62 @@
+@startuml
+title Vista de Escenarios - Registrar Pago
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "Operador" as Operador
+
+boundary "Adaptador Primario\nAPI / UI" as Adaptador
+control "RegistrarPago\n(Caso de uso)" as RegistrarPago
+entity "Credito" as Credito
+control "PrelacionPago" as Prelacion
+control "CalculadoraMora" as Mora
+entity "Movimiento" as Movimiento
+participant "RepositorioCreditos" as RepoCredito
+participant "RepositorioMovimientos" as RepoMovimiento
+
+Operador -> Adaptador : Registrar pago
+
+Adaptador -> RegistrarPago : ejecutar(creditoId, monto,\nfechaCorte, claveIdempotencia)
+
+RegistrarPago -> RepoCredito : buscarPorId(creditoId)
+RepoCredito --> RegistrarPago : credito
+
+RegistrarPago -> Credito : validar que acepta pagos
+Credito --> RegistrarPago : estado valido
+
+RegistrarPago -> Mora : calcular deuda vencida(fechaCorte)
+Mora --> RegistrarPago : interes moratorio / atraso
+
+RegistrarPago -> Prelacion : aplicar(monto, deuda)
+
+note right of Prelacion
+Orden obligatorio:
+1. Gastos / comisiones
+2. Interes moratorio
+3. Interes corriente
+4. Capital
+end note
+
+Prelacion --> RegistrarPago : distribucion del pago
+
+RegistrarPago -> Movimiento : crear movimientos por concepto
+Movimiento --> RegistrarPago : movimientos
+
+RegistrarPago -> Credito : aplicar resultado del pago
+
+alt "Paga TODO lo vencido"
+    Credito -> Credito : diasAtraso = 0
+    Credito -> Credito : EN_MORA -> VIGENTE
+else "Paga PARTE de lo vencido"
+    Credito -> Credito : recalcular dias de atraso
+    Credito -> Credito : permanece EN_MORA
+end
+
+RegistrarPago -> RepoMovimiento : guardar movimientos
+RegistrarPago -> RepoCredito : guardar credito actualizado
+
+RegistrarPago --> Adaptador : resultado del pago
+Adaptador --> Operador : confirmacion
+
+@enduml
