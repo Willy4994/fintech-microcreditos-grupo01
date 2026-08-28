@@ -4,7 +4,7 @@ title C4 Nivel 3 - Componentes del Backend
 skinparam shadowing false
 left to right direction
 
-actor "Adaptadores Primarios\nAPI REST / MCP / Chat" as Primarios
+actor "Adaptadores Primarios futuros\nAPI REST / MCP / Chat\nProyecto Final" as Primarios
 
 rectangle "Backend - Sistema de Gestion de Microcredito" {
 
@@ -43,7 +43,7 @@ rectangle "Backend - Sistema de Gestion de Microcredito" {
     }
 }
 
-database "PostgreSQL\nAdaptador secundario" as DB
+database "PostgreSQL\nFuturo - Proyecto Final\nAdaptador secundario" as DB
 
 Primarios --> Desembolsar
 Primarios --> RegistrarPago

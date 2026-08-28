@@ -14,8 +14,8 @@ Responsabilidades principales:
 
 * sumar importes;
 * restar importes;
-* multiplicar por tasas;
-* redondear a dos decimales;
+* convertir temporalmente a Decimal para cálculos financieros;
+* redondear a centavos con medio hacia arriba;
 * impedir operaciones entre monedas diferentes.
 
 Las operaciones no modifican la instancia original, sino que devuelven un nuevo objeto Dinero.
@@ -32,9 +32,7 @@ Problema que resuelve:
 La política institucional puede cambiar el método utilizado para generar un plan de amortización.
 
 Aplicación:
-Se define la interfaz:
-
-EstrategiaAmortizacion
+Se define la interfaz `MetodoAmortizacion`.
 
 La implementación inicial será:
 
@@ -79,7 +77,7 @@ Estados principales:
 * Anulado
 * Incobrable
 
-El objeto Credito delega las operaciones dependientes del estado al objeto de estado actual.
+El objeto Credito delega las operaciones dependientes del estado al objeto de estado actual. Cada cambio efectivo se agrega a un historial inmutable con fecha, actor y motivo; los pagos parciales que conservan `EN_MORA` actualizan la clasificación derivada, pero no inventan un cambio de estado.
 
 ⸻
 

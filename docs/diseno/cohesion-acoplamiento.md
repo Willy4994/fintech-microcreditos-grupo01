@@ -42,7 +42,7 @@ Sus componentes están relacionados exclusivamente con cálculos financieros:
 * Dinero
 * Cuota
 * PlanAmortizacion
-* EstrategiaAmortizacion
+* MetodoAmortizacion
 * AmortizacionFrancesa
 * CalculadoraMora
 

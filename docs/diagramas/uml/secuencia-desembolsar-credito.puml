@@ -39,7 +39,7 @@ alt Solicitud aprobada
 
     CasoUso -> Movimiento : registrarDesembolso(capital)
 
-    CasoUso -> Credito : desembolsar()
+    CasoUso -> Credito : desembolsar(capitalEntregado=true, contexto)
 
     note right of Credito
       APROBADO -> DESEMBOLSADO

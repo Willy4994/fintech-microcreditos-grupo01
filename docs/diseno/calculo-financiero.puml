@@ -8,55 +8,51 @@ left to right direction
 package "Calculo Financiero" {
 
     class Dinero <<Value Object>> {
-        - valor: Decimal
-        - moneda: string
+        - centavos: number
+        + moneda: Moneda
         + sumar(otro: Dinero): Dinero
         + restar(otro: Dinero): Dinero
-        + multiplicar(factor: Decimal): Dinero
+        + toDecimal(): Decimal
         + esCero(): boolean
-        + redondear(): Dinero
     }
 
     class Cuota {
         + numero: number
-        + cuota: Dinero
+        + monto: Dinero
         + interes: Dinero
-        + amortizacion: Dinero
+        + amortizacionCapital: Dinero
         + saldo: Dinero
     }
 
     class PlanAmortizacion {
-        + capital: Dinero
-        + tasaMensual: Decimal
-        + plazoMeses: number
         + cuotas: Cuota[]
+        + obtenerUltimaCuota(): Cuota
         + obtenerSaldoFinal(): Dinero
-        + obtenerTotalAmortizado(): Dinero
     }
 
-    interface EstrategiaAmortizacion <<Strategy>> {
-        + generarPlan(
+    interface MetodoAmortizacion <<Strategy>> {
+        + calcular(
             capital: Dinero,
-            tasaAnual: Decimal,
-            plazoMeses: number
+            tasaMensual: TasaMensual,
+            plazo: Plazo
           ): PlanAmortizacion
     }
 
     class AmortizacionFrancesa {
-        + generarPlan(
+        + calcular(
             capital: Dinero,
-            tasaAnual: Decimal,
-            plazoMeses: number
+            tasaMensual: TasaMensual,
+            plazo: Plazo
           ): PlanAmortizacion
     }
 
     class CalculadoraMora {
         + calcularInteresMoratorio(
             capitalEnMora: Dinero,
-            tasaAnual: Decimal,
-            diasAtraso: number
+            tasaMoratoria: TasaNominalAnual,
+            baseConteo: BaseConteo,
+            diasAtraso: DiasAtraso
           ): Dinero
-        + clasificarTramo(diasAtraso: number): TramoMora
     }
 
     enum TramoMora {
@@ -65,23 +61,10 @@ package "Calculo Financiero" {
         MORA_2
         MORA_3
         VENCIDO
-        INCOBRABLE
-    }
-
-    class ConstructorPlan <<Factory / Builder>> {
-        - estrategia: EstrategiaAmortizacion
-        + crear(
-            capital: Dinero,
-            tasaAnual: Decimal,
-            plazoMeses: number
-          ): PlanAmortizacion
     }
 }
 
-EstrategiaAmortizacion <|.. AmortizacionFrancesa
-
-ConstructorPlan --> EstrategiaAmortizacion : utiliza
-ConstructorPlan --> PlanAmortizacion : construye
+MetodoAmortizacion <|.. AmortizacionFrancesa
 
 PlanAmortizacion "1" *-- "1..*" Cuota : contiene
 
@@ -92,14 +75,14 @@ AmortizacionFrancesa --> Dinero
 AmortizacionFrancesa --> PlanAmortizacion
 
 CalculadoraMora --> Dinero
-CalculadoraMora --> TramoMora
+TramoMora ..> DiasAtraso
 
 note right of Dinero
 Objeto de Valor.
 Todo importe monetario
 se representa con Dinero.
-No se utiliza number
-para dinero.
+El number representa siempre
+centavos enteros.
 end note
 
 note right of AmortizacionFrancesa

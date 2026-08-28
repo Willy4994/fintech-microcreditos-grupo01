@@ -7,21 +7,22 @@ left to right direction
 
 package "Value Object" {
     class Dinero <<Value Object>> {
-        - valor: Decimal
-        - moneda: string
+        - centavos: number
+        - moneda: Moneda
         + sumar(otro: Dinero): Dinero
         + restar(otro: Dinero): Dinero
+        + toDecimal(): Decimal
     }
 }
 
 package "Strategy" {
-    interface EstrategiaAmortizacion <<Strategy>> {
-        + generarPlan(): PlanAmortizacion
+    interface MetodoAmortizacion <<Strategy>> {
+        + calcular(capital, tasaMensual, plazo): PlanAmortizacion
     }
 
     class AmortizacionFrancesa
 
-    EstrategiaAmortizacion <|.. AmortizacionFrancesa
+    MetodoAmortizacion <|.. AmortizacionFrancesa
 }
 
 package "State" {
@@ -31,21 +32,35 @@ package "State" {
         + cancelar(): void
     }
 
-    class EstadoSolicitado
-    class EstadoVigente
-    class EstadoEnMora
-    class EstadoCancelado
+    class CreditoSolicitado
+    class CreditoAprobado
+    class CreditoDesembolsado
+    class CreditoVigente
+    class CreditoEnMora
+    class CreditoReestructurado
+    class CreditoCancelado
+    class CreditoRechazado
+    class CreditoAnulado
+    class CreditoIncobrable
 
     class Credito {
         - estado: EstadoCredito
-        + registrarPago(): void
-        + cambiarEstado(estado: EstadoCredito): void
+        - historialEstados: CambioEstadoCredito[]
+        + registrarPago(diasRestantes, contexto): void
+        + reestructurar(contexto): void
+        + declararIncobrable(contexto): void
     }
 
-    EstadoCredito <|.. EstadoSolicitado
-    EstadoCredito <|.. EstadoVigente
-    EstadoCredito <|.. EstadoEnMora
-    EstadoCredito <|.. EstadoCancelado
+    EstadoCredito <|.. CreditoSolicitado
+    EstadoCredito <|.. CreditoAprobado
+    EstadoCredito <|.. CreditoDesembolsado
+    EstadoCredito <|.. CreditoVigente
+    EstadoCredito <|.. CreditoEnMora
+    EstadoCredito <|.. CreditoReestructurado
+    EstadoCredito <|.. CreditoCancelado
+    EstadoCredito <|.. CreditoRechazado
+    EstadoCredito <|.. CreditoAnulado
+    EstadoCredito <|.. CreditoIncobrable
 
     Credito --> EstadoCredito : delega comportamiento
 }

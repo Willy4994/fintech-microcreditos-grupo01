@@ -19,38 +19,41 @@ class SolicitudCredito {
 }
 
 class Credito {
-  - id: string
-  - fechaOtorgamiento: Date
-  - fechaDesembolso: Date
-  - capitalOriginal: Dinero
-  - saldoCapital: Dinero
+  + id: CreditoId
+  + clienteId: ClienteId
+  + solicitudId: SolicitudCreditoId
+  + capital: Dinero
   - plazoMeses: number
   - estado: EstadoCredito
   - fueReestructurado: boolean
+  - diasAtraso: DiasAtraso
+  - historialEstados: CambioEstadoCredito[]
 
-  + desembolsar(): void
-  + registrarPago(pago: Pago): void
-  + actualizarEstado(): void
+  + aprobar(cumplePolitica, contexto): void
+  + rechazar(contexto): void
+  + desembolsar(capitalEntregado, contexto): void
+  + activar(contexto): void
+  + marcarEnMora(dias, contexto): void
+  + registrarPago(diasRestantes, contexto): void
+  + reestructurar(comiteAutoriza, contexto): void
+  + curar(cumplePoliticaCura, contexto): void
+  + cancelar(saldoCapitalRestante, contexto): void
+  + anular(contexto): void
+  + declararIncobrable(contexto): void
 }
 
 class PlanAmortizacion {
-  - id: string
-  - capital: Dinero
-  - tasaMensual: Decimal
-  - numeroCuotas: number
-
-  + generar(): Cuota[]
+  + cuotas: Cuota[]
+  + obtenerUltimaCuota(): Cuota
+  + obtenerSaldoFinal(): Dinero
 }
 
 class Cuota {
-  - numero: number
-  - fechaVencimiento: Date
-  - saldoInicial: Dinero
-  - montoCuota: Dinero
-  - interesCorriente: Dinero
-  - amortizacionCapital: Dinero
-  - saldoFinal: Dinero
-  - pagada: boolean
+  + numero: number
+  + monto: Dinero
+  + interes: Dinero
+  + amortizacionCapital: Dinero
+  + saldo: Dinero
 }
 
 class Pago {
@@ -81,12 +84,14 @@ class Cierre {
 }
 
 class Dinero <<Value Object>> {
-  - monto: number
-  - moneda: string
+  - centavos: number
+  + moneda: Moneda
 
   + sumar(otro: Dinero): Dinero
   + restar(otro: Dinero): Dinero
-  + multiplicar(factor: Decimal): Dinero
+  + esMenorQue(otro: Dinero): boolean
+  + esMayorQue(otro: Dinero): boolean
+  + toDecimal(): Decimal
   + esCero(): boolean
 }
 
@@ -104,10 +109,30 @@ class PrelacionPago <<Domain Service>> {
   + aplicar(pago: Dinero, cuota: Cuota): ResultadoAplicacionPago
 }
 
-class Cartera <<Domain Service>> {
-  + calcularCarteraActiva(creditos: Credito[]): Dinero
-  + calcularCarteraEnRiesgo(creditos: Credito[]): Dinero
-  + calcularPorcentajeRiesgo(creditos: Credito[]): Decimal
+class Cartera {
+  - creditos: PosicionCartera[]
+  + agregarCredito(posicion: PosicionCartera): void
+  + obtenerCreditos(): PosicionCartera[]
+}
+
+class CalculadoraCarteraRiesgo <<Domain Service>> {
+  + calcular(cartera: Cartera): ResultadoCarteraRiesgo
+}
+
+class ProcesadorPago <<Domain Service>> {
+  + procesar(pago, deuda, clavesProcesadas): ResultadoProcesamientoPago
+}
+
+class DesembolsarCredito <<Application Service>> {
+  + ejecutar(solicitudId, contexto): Credito
+}
+
+class CambioEstadoCredito {
+  + estadoAnterior: EstadoCredito
+  + estadoNuevo: EstadoCredito
+  + fecha: Date
+  + actor: string
+  + motivo: string
 }
 
 enum EstadoCredito {
@@ -154,7 +179,12 @@ Pago "1" -- "1..*" Movimiento
 Credito "1" -- "0..*" Movimiento
 Cierre "1" -- "0..*" Movimiento : consolida >
 Credito --> EstadoCredito
+Credito "1" *-- "1..*" CambioEstadoCredito
 CalculadoraMora --> TramoMora
+CalculadoraCarteraRiesgo --> Cartera
+ProcesadorPago --> PrelacionPago
+DesembolsarCredito --> Credito
+DesembolsarCredito --> PlanAmortizacion
 
 PlanAmortizacion ..> Dinero
 Credito ..> Dinero

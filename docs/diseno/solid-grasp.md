@@ -33,7 +33,7 @@ Los componentes deben estar abiertos a extensión pero cerrados a modificaciones
 
 El módulo de cálculo utiliza la interfaz:
 
-EstrategiaAmortizacion
+MetodoAmortizacion
 
 La implementación inicial es:
 
@@ -49,7 +49,7 @@ El mismo criterio puede aplicarse a políticas financieras versionadas, permitie
 
 Las implementaciones de una abstracción deben poder sustituirse sin alterar el comportamiento esperado por sus consumidores.
 
-Por ejemplo, cualquier implementación válida de EstrategiaAmortizacion debe producir un PlanAmortizacion que respete los invariantes establecidos por el dominio.
+Por ejemplo, cualquier implementación válida de MetodoAmortizacion debe producir un PlanAmortizacion que respete los invariantes establecidos por el dominio.
 
 Entre ellos:
 
@@ -57,7 +57,7 @@ Entre ellos:
 * la suma de amortizaciones debe coincidir con el capital;
 * el saldo después de la última cuota debe ser exactamente Q0.00.
 
-El consumidor depende del contrato de EstrategiaAmortizacion, no de una implementación específica.
+El consumidor depende del contrato de MetodoAmortizacion, no de una implementación específica.
 
 ⸻
 
@@ -106,7 +106,7 @@ Una responsabilidad debe asignarse al objeto que posee la información necesaria
 
 Ejemplos:
 
-* PlanAmortizacion conoce sus cuotas y puede determinar su total amortizado y saldo final.
+* PlanAmortizacion conoce sus cuotas y puede determinar su última cuota y saldo final.
 * Credito conoce su saldo, estado e historial necesario para validar determinadas operaciones.
 * Cuota contiene los importes correspondientes a capital e interés de un período.
 
@@ -177,7 +177,7 @@ Esta separación evita módulos con responsabilidades excesivamente diferentes.
 
 Cuando una operación puede variar según una política, se utiliza una abstracción en lugar de condicionales distribuidos.
 
-EstrategiaAmortizacion permite utilizar diferentes algoritmos de amortización mediante implementaciones intercambiables.
+MetodoAmortizacion permite utilizar diferentes algoritmos de amortización mediante implementaciones intercambiables.
 
 El caso de uso que necesita generar el plan no necesita conocer los detalles internos del algoritmo seleccionado.
 
@@ -191,7 +191,7 @@ Ejemplos:
 
 * cambios en persistencia → RepositorioCreditos;
 * cambios en la fuente de fecha → Reloj;
-* cambios en métodos de amortización → EstrategiaAmortizacion;
+* cambios en métodos de amortización → MetodoAmortizacion;
 * cambios futuros en mecanismos de entrada → puertos de aplicación.
 
 De esta forma, una variación tecnológica o institucional tiene un impacto limitado sobre el resto del sistema.

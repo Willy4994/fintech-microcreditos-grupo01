@@ -8,15 +8,15 @@ actor "Asesor / Operador / Gerencia" as Usuario
 
 rectangle "Sistema de Gestion de Microcredito" {
 
-    rectangle "Aplicacion Web\nReact + Vite + Tailwind" as WebApp
+    rectangle "Aplicacion Web\nFuturo - Proyecto Final" as WebApp
 
-    rectangle "API REST\nExpress 5 / Fastify\nAdaptador primario" as API
+    rectangle "API REST\nFuturo - Proyecto Final\nAdaptador primario" as API
 
     rectangle "Aplicacion / Casos de Uso\nTypeScript" as Aplicacion
 
     rectangle "Nucleo de Dominio\nTypeScript strict\nSin dependencias de infraestructura" as Dominio
 
-    database "PostgreSQL\nAdaptador secundario" as DB
+    database "PostgreSQL\nFuturo - Proyecto Final\nAdaptador secundario" as DB
 
     rectangle "Servidor MCP\nProyecto Final\nAdaptador primario" as MCP
 

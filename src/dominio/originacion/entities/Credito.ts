@@ -41,12 +41,10 @@ export class Credito {
     public readonly solicitudId: SolicitudCreditoId,
     public readonly capital: Dinero,
     public readonly plazoMeses: number,
-    contextoCreacion: ContextoTransicionCredito = {
-      fecha: new Date(0),
-      actor: "SISTEMA",
-      motivo: "Creación del crédito",
-    }
+    contextoCreacion: ContextoTransicionCredito
   ) {
+    this.validarContexto(contextoCreacion);
+
     this.estado =
       new CreditoSolicitado();
 
@@ -63,7 +61,16 @@ export class Credito {
     return this.estado.nombre;
   }
 
-  aprobar(contexto: ContextoTransicionCredito): void {
+  aprobar(
+    cumplePoliticaCredito: boolean,
+    contexto: ContextoTransicionCredito
+  ): void {
+    if (!cumplePoliticaCredito) {
+      throw new Error(
+        "El crédito no cumple la política de aprobación"
+      );
+    }
+
     this.cambiarEstado(this.estado.aprobar(), contexto);
   }
 
@@ -71,7 +78,16 @@ export class Credito {
     this.cambiarEstado(this.estado.rechazar(), contexto);
   }
 
-  desembolsar(contexto: ContextoTransicionCredito): void {
+  desembolsar(
+    capitalEntregado: boolean,
+    contexto: ContextoTransicionCredito
+  ): void {
+    if (!capitalEntregado) {
+      throw new Error(
+        "No puede desembolsarse sin entregar el capital al cliente"
+      );
+    }
+
     this.cambiarEstado(this.estado.desembolsar(), contexto);
   }
 
@@ -109,18 +125,51 @@ export class Credito {
     this.cambiarEstado(this.estado.anular(), contexto);
   }
 
-  reestructurar(contexto: ContextoTransicionCredito): void {
+  reestructurar(
+    comiteAutoriza: boolean,
+    contexto: ContextoTransicionCredito
+  ): void {
+    if (!comiteAutoriza) {
+      throw new Error(
+        "La reestructuración requiere autorización del comité"
+      );
+    }
+
     this.cambiarEstado(this.estado.reestructurar(), contexto);
     this.fueReestructurado = true;
     this.diasAtraso = new DiasAtraso(0);
   }
 
-  curar(contexto: ContextoTransicionCredito): void {
+  curar(
+    cumplePoliticaCura: boolean,
+    contexto: ContextoTransicionCredito
+  ): void {
+    if (!cumplePoliticaCura) {
+      throw new Error(
+        "El crédito no cumple la política de cura"
+      );
+    }
+
     this.cambiarEstado(this.estado.curar(), contexto);
     this.diasAtraso = new DiasAtraso(0);
   }
 
-  cancelar(contexto: ContextoTransicionCredito): void {
+  cancelar(
+    saldoCapitalRestante: Dinero,
+    contexto: ContextoTransicionCredito
+  ): void {
+    if (saldoCapitalRestante.moneda !== this.capital.moneda) {
+      throw new Error(
+        "La moneda del saldo debe coincidir con la del crédito"
+      );
+    }
+
+    if (!saldoCapitalRestante.esCero()) {
+      throw new Error(
+        "Solo puede cancelarse un crédito con saldo de capital cero"
+      );
+    }
+
     this.cambiarEstado(this.estado.cancelar(), contexto);
     this.diasAtraso = new DiasAtraso(0);
   }
@@ -157,6 +206,8 @@ export class Credito {
     estadoNuevo: EstadoCredito,
     contexto: ContextoTransicionCredito
   ): void {
+    this.validarContexto(contexto);
+
     const estadoAnterior = this.estado.nombre;
     this.estado = estadoNuevo;
 
@@ -171,5 +222,21 @@ export class Credito {
       actor: contexto.actor,
       motivo: contexto.motivo,
     });
+  }
+
+  private validarContexto(
+    contexto: ContextoTransicionCredito
+  ): void {
+    if (Number.isNaN(contexto.fecha.getTime())) {
+      throw new Error("La fecha de la transición no es válida");
+    }
+
+    if (contexto.actor.trim().length === 0) {
+      throw new Error("El actor de la transición es obligatorio");
+    }
+
+    if (contexto.motivo.trim().length === 0) {
+      throw new Error("El motivo de la transición es obligatorio");
+    }
   }
 }
