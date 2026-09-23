@@ -3,6 +3,7 @@ import { EstadoCreditoBase } from "./EstadoCreditoBase.js";
 import { CreditoVigente } from "./CreditoVigente.js";
 import { CreditoReestructurado } from "./CreditoReestructurado.js";
 import { CreditoIncobrable } from "./CreditoIncobrable.js";
+import { CreditoCancelado } from "./CreditoCancelado.js";
 
 export class CreditoEnMora extends EstadoCreditoBase {
   readonly nombre: NombreEstadoCredito = "EN_MORA";
@@ -17,6 +18,10 @@ export class CreditoEnMora extends EstadoCreditoBase {
 
   override reestructurar(): EstadoCreditoBase {
     return new CreditoReestructurado();
+  }
+
+  override cancelar(): EstadoCreditoBase {
+    return new CreditoCancelado();
   }
 
   override declararIncobrable(): EstadoCreditoBase {

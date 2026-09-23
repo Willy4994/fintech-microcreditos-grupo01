@@ -91,4 +91,34 @@ describe("CalculadoraCarteraRiesgo", () => {
       800_000
     );
   });
+
+  it("desglosa la cartera en riesgo y diferencia la cartera en mora", () => {
+  const resultado = new CalculadoraCarteraRiesgo().calcular(
+    casoReferencia()
+  );
+
+  expect(
+    resultado.porcentajeMora2.times(100).toFixed(2)
+  ).toBe("3.00");
+
+  expect(
+    resultado.porcentajeMora3.times(100).toFixed(2)
+  ).toBe("2.25");
+
+  expect(
+    resultado.porcentajeVencido.times(100).toFixed(2)
+  ).toBe("1.00");
+
+  expect(
+    resultado.porcentajeReestructurado.times(100).toFixed(2)
+  ).toBe("0.75");
+
+  expect(
+    resultado.porcentajeRiesgo.times(100).toFixed(2)
+  ).toBe("7.00");
+
+  expect(
+    resultado.porcentajeCarteraMora.times(100).toFixed(2)
+  ).toBe("21.75");
+});
 });
