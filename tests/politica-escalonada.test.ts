@@ -12,6 +12,9 @@ import { DiasAtraso } from
 import { TasaNominalAnual } from
   "../src/dominio/calculo-financiero/value-objects/TasaNominalAnual.js";
 
+import { PoliticaRetroactiva } from
+  "../src/dominio/politica-mora/PoliticaRetroactiva.js";
+
 describe("PoliticaEscalonada", () => {
   const politica = new PoliticaEscalonada();
 
@@ -35,6 +38,51 @@ describe("PoliticaEscalonada", () => {
       resultado.toDecimal().toFixed(2)
     ).toBe("5.44");
   });
+  
+  it("M-2: calcula Q18.14 para 45 días de atraso", () => {
+  const resultado =
+    politica.calcularInteresMoratorio(
+      capital,
+      tasa,
+      "ACTUAL_360",
+      new DiasAtraso(45)
+    );
+
+  expect(
+    resultado.toDecimal().toFixed(2)
+  ).toBe("18.14");
+});
+
+it("M-3: calcula Q50.80 para 100 días de atraso", () => {
+  const resultado =
+    politica.calcularInteresMoratorio(
+      capital,
+      tasa,
+      "ACTUAL_360",
+      new DiasAtraso(100)
+    );
+
+  expect(
+    resultado.toDecimal().toFixed(2)
+  ).toBe("50.80");
+});
+
+  it("política retroactiva calcula Q72.58 para 100 días", () => {
+  const politicaRetroactiva =
+    new PoliticaRetroactiva();
+
+  const resultado =
+    politicaRetroactiva.calcularInteresMoratorio(
+      capital,
+      tasa,
+      "ACTUAL_360",
+      new DiasAtraso(100)
+    );
+
+  expect(
+    resultado.toDecimal().toFixed(2)
+  ).toBe("72.58");
+});
 
   it("calcula correctamente 30 días de atraso", () => {
     const resultado =
