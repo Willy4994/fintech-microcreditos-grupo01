@@ -6,7 +6,7 @@ Para realizar la medición del impacto de los cambios del Proyecto 2 se tomó co
 
 - **Commit P1:** `b3293fc`
 - **Tag P1:** `entrega-p1`
-- **Commit P2 evaluado:** `4654405`
+- **Versión P2 evaluada:** `entrega-p2` (tag de entrega final)
 - **Rama de trabajo:** `feature/p2-politica-mora`
 
 La comparación entre ambas versiones se realizó utilizando Git y limitando el análisis del núcleo a la carpeta `src/dominio/`.
@@ -15,13 +15,17 @@ Comando utilizado:
 
 `git diff --stat entrega-p1..HEAD -- src/dominio/`
 
+El objetivo de esta comparación es medir cuánto tuvo que cambiar el núcleo existente para incorporar los nuevos requisitos del Proyecto 2.
+
+---
+
 ## 2. Métricas del cambio
 
 La comparación entre el Proyecto 1 y el Proyecto 2 produjo los siguientes resultados:
 
 | Métrica | Resultado |
 |---|---:|
-| Archivos del núcleo creados | 8 |
+| Archivos del núcleo creados | 7 |
 | Archivos existentes del núcleo modificados | 3 |
 | ¿Se modificó el motor de cálculo de mora? | Sí |
 | Pruebas del P1 que dejaron de pasar | 0 |
@@ -30,7 +34,7 @@ La comparación entre el Proyecto 1 y el Proyecto 2 produjo los siguientes resul
 
 Git reportó un total de **438 inserciones y 33 eliminaciones** dentro de `src/dominio/`, dando como resultado **405 líneas netas añadidas**.
 
-### Archivos existentes modificados
+### 2.1 Archivos existentes modificados
 
 Los tres archivos que ya existían en el Proyecto 1 y tuvieron que modificarse fueron:
 
@@ -38,7 +42,7 @@ Los tres archivos que ya existían en el Proyecto 1 y tuvieron que modificarse f
 - `src/dominio/cierres/services/CalculadoraCarteraRiesgo.ts`
 - `src/dominio/originacion/states/CreditoEnMora.ts`
 
-### Archivos nuevos
+### 2.2 Archivos nuevos
 
 Para implementar los nuevos requisitos se agregaron siete archivos al núcleo:
 
@@ -50,7 +54,19 @@ Para implementar los nuevos requisitos se agregaron siete archivos al núcleo:
 - `src/dominio/politica-mora/PoliticaPlana.ts`
 - `src/dominio/politica-mora/PoliticaRetroactiva.ts`
 
-La modificación de `CalculadoraMora.ts` es relevante para el análisis del principio Abierto/Cerrado (OCP), ya que el cambio de requisitos requirió modificar una pieza existente del motor de cálculo de mora. Este resultado se analiza posteriormente con base en la evidencia del repositorio.
+La modificación de `CalculadoraMora.ts` es especialmente relevante para el análisis del principio Abierto/Cerrado (OCP), ya que el cambio de requisitos requirió modificar una pieza existente del motor.
+
+Por lo tanto, el resultado real muestra que el diseño del Proyecto 1 tenía una oportunidad de mejora respecto a OCP.
+
+### 2.3 Pruebas del Proyecto 1
+
+No fue necesario reescribir pruebas existentes del Proyecto 1 para hacer pasar la nueva implementación.
+
+El archivo `tests/cartera.test.ts` aparece como modificado porque se agregó un nuevo caso correspondiente al Proyecto 2, pero las pruebas existentes no fueron reemplazadas ni alteradas para ocultar regresiones.
+
+La suite completa continúa ejecutándose correctamente.
+
+---
 
 ## 3. Análisis de los principios SOLID
 
@@ -62,7 +78,13 @@ La clase:
 
 `src/dominio/cartera-cobros/value-objects/TramoMora.ts`
 
-es responsable de clasificar los días de atraso en `SIN_MORA`, `MORA_1`, `MORA_2`, `MORA_3` o `VENCIDO`.
+es responsable de clasificar los días de atraso en estados como:
+
+- `SIN_MORA`
+- `MORA_1`
+- `MORA_2`
+- `MORA_3`
+- `VENCIDO`
 
 Por otro lado, el cálculo del interés moratorio se encuentra separado mediante el contrato:
 
@@ -74,27 +96,39 @@ y sus diferentes implementaciones:
 - `PoliticaEscalonada.ts`
 - `PoliticaRetroactiva.ts`
 
-De esta forma, la clasificación del tramo no tiene que decidir directamente cuánto interés debe cobrarse. Las responsabilidades se mantienen separadas entre la clasificación de la mora y las políticas encargadas del cálculo.
+De esta forma, la clasificación del tramo no tiene que decidir directamente cuánto interés debe cobrarse.
+
+La clasificación de la mora y las políticas encargadas del cálculo permanecen como responsabilidades separadas.
+
+**Resultado:** el diseño presenta una separación clara de responsabilidades para esta parte del dominio.
+
+---
 
 ### 3.2 O — Abierto/Cerrado (OCP)
 
 Este principio presentó uno de los principales puntos de fricción durante la evolución del Proyecto 1 al Proyecto 2.
 
-En el Proyecto 1, `CalculadoraMora.ts` contenía directamente la fórmula utilizada para calcular el interés moratorio. Para soportar varias políticas de mora fue necesario modificar este archivo existente.
+En el Proyecto 1, `CalculadoraMora.ts` contenía directamente la fórmula utilizada para calcular el interés moratorio.
 
-El cambio introdujo la abstracción `PoliticaMora` y `CalculadoraMora` pasó a recibir una política mediante su constructor:
+Para soportar varias políticas de mora fue necesario modificar este archivo existente.
 
-`private readonly politica: PoliticaMora`
+El cambio introdujo la abstracción:
 
-Posteriormente delega el cálculo mediante:
+`PoliticaMora`
+
+y `CalculadoraMora` pasó a recibir una política mediante su constructor.
+
+La calculadora posteriormente delega el cálculo a:
 
 `this.politica.calcularInteresMoratorio(...)`
 
-Esto significa que el diseño original de P1 no estaba completamente cerrado a modificaciones, ya que fue necesario modificar el motor para introducir las nuevas estrategias.
+Esto significa que el diseño original del Proyecto 1 no estaba completamente cerrado a modificaciones, ya que fue necesario abrir y modificar el motor para introducir las nuevas estrategias.
 
-Sin embargo, el rediseño realizado en P2 permite que nuevas implementaciones de `PoliticaMora` puedan incorporarse posteriormente sin modificar nuevamente la lógica interna de `CalculadoraMora`.
+Sin embargo, el rediseño realizado en el Proyecto 2 permite que nuevas implementaciones de `PoliticaMora` puedan incorporarse posteriormente sin modificar nuevamente la lógica interna de `CalculadoraMora`.
 
-Por lo tanto, el cambio permitió identificar una debilidad de OCP en P1 y aplicar un rediseño basado en Strategy para mejorar la extensibilidad del núcleo.
+**Resultado:** P1 presentaba una debilidad respecto a OCP. En P2 se aplicó un rediseño basado en Strategy para mejorar la extensibilidad del núcleo.
+
+---
 
 ### 3.3 L — Sustitución de Liskov (LSP)
 
@@ -110,176 +144,257 @@ La evidencia principal se encuentra en:
 
 `tests/contrato-politica-mora.test.ts`
 
-La misma batería de pruebas de contrato se ejecuta contra las tres implementaciones. Las pruebas verifican, entre otros aspectos, que el resultado no sea negativo, que con cero días de atraso el resultado sea cero y que se conserve la moneda del capital recibido.
+La misma batería de pruebas de contrato se ejecuta contra las tres implementaciones.
 
-Esto demuestra que las tres políticas pueden sustituirse utilizando el mismo contrato sin romper las condiciones verificadas por el motor.
+Estas pruebas verifican condiciones comunes del contrato, entre ellas que el resultado sea válido, que con cero días de atraso no se genere mora y que se conserve la moneda correspondiente.
+
+Además, las políticas plana y escalonada pueden coexistir y producir resultados diferentes para un mismo escenario sin cambiar el contrato utilizado por el consumidor.
+
+**Resultado:** las tres políticas pueden sustituirse utilizando la misma abstracción sin romper las condiciones verificadas por las pruebas de contrato.
+
+---
 
 ### 3.4 I — Segregación de Interfaces (ISP)
 
-El núcleo utiliza interfaces específicas para responsabilidades concretas en lugar de una única interfaz general.
+El núcleo utiliza interfaces específicas para responsabilidades concretas en lugar de depender de una única interfaz general con operaciones que los consumidores no necesitan.
 
-Entre las abstracciones encontradas se encuentran:
+`PoliticaMora` define únicamente el comportamiento necesario para realizar el cálculo de interés moratorio.
 
-- `PoliticaMora`, para el cálculo del interés moratorio.
-- `MetodoAmortizacion`, para estrategias de amortización.
-- `Reloj`, para proporcionar tiempo al dominio.
-- `GeneradorIds`, para la generación de identificadores.
-- `EstadoCredito`, para representar el comportamiento correspondiente al estado de un crédito.
+Esto permite que `PoliticaPlana`, `PoliticaEscalonada` y `PoliticaRetroactiva` dependan de un contrato pequeño y relacionado directamente con su responsabilidad.
 
-Estas interfaces mantienen contratos enfocados en necesidades específicas del dominio. Por ejemplo, una política de mora no necesita implementar operaciones relacionadas con amortización, generación de identificadores o estados del crédito.
+De la misma forma, otras responsabilidades del dominio permanecen separadas en sus respectivos componentes en lugar de concentrarse dentro de una interfaz general del sistema.
 
-Esto reduce dependencias innecesarias entre los componentes y permite que cada implementación dependa únicamente del contrato que necesita.
+**Resultado:** las políticas dependen de una abstracción específica para el cálculo que realizan y no de contratos con responsabilidades ajenas.
+
+---
 
 ### 3.5 D — Inversión de Dependencias (DIP)
 
-El núcleo presenta separación respecto a tecnologías externas y detalles de infraestructura.
+`CalculadoraMora` no depende directamente de una implementación específica como `PoliticaPlana` o `PoliticaEscalonada`.
 
-La revisión de los imports dentro de `src/dominio/` no encontró dependencias directas hacia Express, PostgreSQL, MySQL, Prisma, Sequelize o TypeORM.
+La calculadora depende de la abstracción:
 
-Además, para comportamientos que pueden variar se utilizan abstracciones como:
+`PoliticaMora`
 
-- `PoliticaMora`
-- `MetodoAmortizacion`
-- `Reloj`
-- `GeneradorIds`
+La política concreta puede proporcionarse al componente, permitiendo cambiar el comportamiento sin acoplar el consumidor a una implementación determinada.
 
-Un ejemplo importante se encuentra en `CalculadoraMora`, que depende del contrato `PoliticaMora` para realizar el cálculo y permite recibir una implementación mediante el constructor.
+Esto reduce el acoplamiento entre el motor y las reglas concretas de mora.
 
-De esta manera, las reglas principales del dominio pueden mantenerse independientes de frameworks, bases de datos y otros detalles externos de infraestructura.
+Además, el núcleo se mantiene independiente de tecnologías externas como servidor HTTP, interfaz gráfica o base de datos.
+
+La lógica financiera puede probarse directamente mediante Vitest sin iniciar infraestructura externa.
+
+**Resultado:** el consumidor principal del cálculo depende de la abstracción `PoliticaMora` y no de una estrategia concreta, mejorando el desacoplamiento del núcleo.
+
+---
 
 ## 4. Puntos de fricción y rediseño
 
-La evolución de los requisitos del Proyecto 2 permitió identificar puntos del diseño original que necesitaron modificaciones. La comparación entre `entrega-p1` y P2 muestra tres archivos existentes del núcleo modificados.
+La evolución del Proyecto 1 permitió identificar piezas existentes que tuvieron que abrirse para incorporar los nuevos requisitos.
 
 ### 4.1 CalculadoraMora.ts
 
-Este fue el principal punto de fricción relacionado con el principio Abierto/Cerrado.
+Este fue el punto de fricción más importante.
 
-En P1, `CalculadoraMora` realizaba directamente la fórmula del interés moratorio. Al introducir diferentes políticas de mora en P2, fue necesario modificar esta clase.
+En P1, la fórmula del interés moratorio se encontraba directamente asociada al motor de cálculo.
 
-Como rediseño se creó la interfaz `PoliticaMora` y la calculadora pasó a delegar el cálculo a una implementación de dicha interfaz.
+Al introducir diferentes políticas fue necesario modificar `CalculadoraMora.ts`.
 
-Esto permitió incorporar:
+Esto evidencia que el diseño original no estaba completamente preparado para la extensión solicitada.
 
-- `PoliticaPlana`
-- `PoliticaEscalonada`
-- `PoliticaRetroactiva`
+**Rediseño aplicado:**
 
-El cambio muestra que el diseño de P1 no estaba completamente preparado para agregar nuevas políticas sin modificar el motor. Sin embargo, después del rediseño, `CalculadoraMora` puede trabajar con diferentes políticas mediante el mismo contrato.
+Se introdujo la abstracción `PoliticaMora` y el patrón Strategy.
+
+La calculadora delega ahora el comportamiento a una política inyectada, permitiendo agregar estrategias adicionales con menor impacto sobre el motor.
 
 ### 4.2 CalculadoraCarteraRiesgo.ts
 
-Este archivo tuvo que evolucionar debido a los nuevos requerimientos relacionados con la medición de cartera.
+Este archivo existente tuvo que modificarse para incorporar el nuevo desglose solicitado para la cartera en riesgo.
 
-En P2 se amplió el cálculo para contemplar indicadores como cartera activa, cartera en riesgo, cartera en mora, Mora 2, Mora 3, vencido, reestructurado y montos declarados incobrables.
+El cálculo permite diferenciar los porcentajes correspondientes a:
 
-La modificación fue necesaria porque la versión de P1 no contemplaba todos los indicadores requeridos por la evolución funcional.
+- Mora 2
+- Mora 3
+- Vencido
+- Reestructurado
 
-Las pruebas de cartera verifican los resultados esperados, incluyendo el caso de referencia de cartera en riesgo de 7.00 % y el escenario posterior con 6.06 %.
+El caso de referencia produce:
+
+- Mora 2: 3.00 %
+- Mora 3: 2.25 %
+- Vencido: 1.00 %
+- Reestructurado: 0.75 %
+- Cartera en riesgo total: 7.00 %
+- Cartera en mora: 21.75 %
+
+La modificación fue necesaria porque el nuevo requisito exige información más detallada que la disponible originalmente.
 
 ### 4.3 CreditoEnMora.ts
 
-El modelo de estados también requirió una modificación puntual.
+También fue necesario modificar el estado `CreditoEnMora` para soportar la nueva transición requerida por el Proyecto 2:
 
-P2 agregó la transición que permite pasar de un crédito `EN_MORA` a `CANCELADO` cuando se cumplen las condiciones correspondientes.
+`en_mora → cancelado`
 
-Para soportar esta transición fue necesario modificar `CreditoEnMora.ts` e incorporar el comportamiento de cancelación.
+El cambio permite cancelar correctamente un crédito que se encuentra en mora cuando se cumplen las condiciones correspondientes.
 
-La prueba `cancelacion-credito-en-mora.test.ts` verifica este nuevo comportamiento.
+Las pruebas también comprueban que continúan existiendo transiciones inválidas, como intentar pagar un crédito que todavía se encuentra en estado `solicitado`.
 
-### 4.4 Resultado del rediseño
+### 4.4 Evaluación general de las fricciones
 
-La medición muestra que fue necesario modificar tres archivos existentes del núcleo. Esto supera el objetivo orientativo de no más de dos archivos modificados indicado en el enunciado.
+El objetivo razonable indicado para los archivos existentes modificados era mantener el impacto reducido.
 
-Sin embargo, los cambios permiten identificar de forma concreta los puntos donde el diseño original presentó fricción. El caso más significativo fue `CalculadoraMora.ts`, que fue rediseñado para delegar el comportamiento variable mediante `PoliticaMora`.
+El resultado real fue de **3 archivos existentes modificados**.
 
-La evolución también se concentró principalmente en archivos nuevos, manteniendo las nuevas políticas separadas del resto de las responsabilidades del dominio.
+Por lo tanto, el cambio no fue absorbido completamente mediante extensiones nuevas.
+
+La principal evidencia de acoplamiento se encontró en `CalculadoraMora.ts`.
+
+Sin embargo, la modificación permitió introducir una abstracción que reduce este problema para futuras políticas.
+
+---
 
 ## 5. Resultado de las pruebas
 
-Después de implementar la evolución del núcleo y realizar los ajustes correspondientes, se ejecutó nuevamente la suite completa de pruebas.
-
-Comandos utilizados:
-
-`npx tsc --noEmit`
+La suite completa se ejecutó mediante:
 
 `npm test`
 
-Resultado final:
+Resultado obtenido:
 
 - **Test Files:** 23 passed (23)
 - **Tests:** 77 passed (77)
-- **Errores de TypeScript:** 0
-- **Pruebas fallidas:** 0
 
-### 5.1 Casos numéricos obligatorios
+También se ejecutó:
 
-La suite verifica los casos numéricos establecidos para las políticas de mora:
+`npx tsc --noEmit`
 
-- M-1: Q5.44
-- M-2: Q18.14
-- M-3: Q50.80
-- M-4: Q65.32
-- M-5: Q1,047.76
+sin errores de TypeScript.
 
-También se verifica la coexistencia de políticas para una misma cuota con 45 días de atraso:
+### 5.1 Casos obligatorios de mora
 
-- Política plana: Q21.77
-- Política escalonada: Q18.14
+Los casos obligatorios del Proyecto 2 se encuentran cubiertos por las pruebas.
 
-### 5.2 Compatibilidad con Proyecto 1
+| Caso | Escenario | Resultado |
+|---|---|---:|
+| M-1 | 15 días, política escalonada | Q5.44 |
+| M-2 | 45 días, política escalonada | Q18.14 |
+| M-3 | 100 días, política escalonada | Q50.80 |
+| M-4 | 120 días, política escalonada | Q65.32 |
+| M-5 | Total adeudado cuota 2 a 45 días con gasto de gestión | Q1,047.76 |
 
-Las pruebas correspondientes al comportamiento existente del Proyecto 1 continúan pasando.
+### 5.2 Coexistencia de políticas
 
-Entre ellas se verifica:
+Se implementaron pruebas para comprobar que distintas políticas pueden coexistir dentro del núcleo.
 
-- Interés moratorio plano de Q7.26.
-- Tabla completa de amortización francesa de 12 cuotas.
-- Capital amortizado total de Q10,000.00.
-- Saldo final igual a cero.
-- Rechazo de pagos sobre un crédito en estado `SOLICITADO`.
+Para el mismo escenario de 45 días de atraso:
 
-No fue necesario reescribir pruebas del Proyecto 1 para adaptar sus resultados a los nuevos requisitos.
+- Política plana: **Q21.77**
+- Política escalonada: **Q18.14**
 
-### 5.3 Contrato de políticas de mora
+La coexistencia permite seleccionar diferentes reglas sin duplicar el motor completo de cálculo.
+
+### 5.3 Regresión del Proyecto 1
+
+La suite del Proyecto 1 continúa funcionando junto con los nuevos requisitos.
+
+El caso original de mora del Proyecto 1 mantiene el resultado esperado de:
+
+**Q7.26**
+
+También se conserva el comportamiento del plan de amortización de 12 cuotas utilizado como referencia en P1.
+
+No fue necesario reescribir las pruebas existentes del Proyecto 1 para hacerlas pasar.
+
+### 5.4 Prueba de contrato
 
 El archivo:
 
 `tests/contrato-politica-mora.test.ts`
 
-ejecuta una misma batería de pruebas contra:
+ejecuta una batería común contra:
 
-- `PoliticaPlana`
-- `PoliticaEscalonada`
-- `PoliticaRetroactiva`
+- Política plana
+- Política escalonada
+- Política retroactiva
 
-Esto permite comprobar que las tres implementaciones respetan el contrato esperado por el núcleo.
+Esto proporciona evidencia de sustituibilidad entre las implementaciones del contrato `PoliticaMora`.
 
-### 5.4 Invariantes y reglas adicionales
+### 5.5 Invariantes
 
-La suite también verifica los ocho invariantes definidos para P2 y las nuevas reglas del dominio, incluyendo:
+El archivo:
 
-- Cancelación de un crédito en mora.
-- Suspensión del devengo de interés corriente después de 90 días.
-- Generación del gasto de gestión de cobro.
-- Cartera en riesgo de 7.00 %.
-- Cartera en riesgo de 6.06 % después de excluir el crédito declarado incobrable.
-- Desglose de riesgo de 3.00 % + 2.25 % + 1.00 % + 0.75 % = 7.00 %.
+`tests/invariantes-p2.test.ts`
 
-El resultado final de 77 pruebas aprobadas confirma que la evolución implementada mantiene los casos anteriores y cubre los nuevos comportamientos requeridos.
+contiene las pruebas correspondientes a los ocho invariantes requeridos para la evolución del núcleo.
+
+La ejecución actual reporta:
+
+**8 tests passed**
+
+### 5.6 Cancelación de crédito en mora
+
+El archivo:
+
+`tests/cancelacion-credito-en-mora.test.ts`
+
+verifica la nueva transición requerida para un crédito en mora y las restricciones relacionadas con los estados del crédito.
+
+La ejecución actual reporta:
+
+**3 tests passed**
+
+### 5.7 Suspensión del devengo
+
+El archivo:
+
+`tests/devengo-interes.test.ts`
+
+verifica el comportamiento del devengo de intereses requerido para los créditos con más de 90 días de atraso.
+
+La ejecución actual reporta:
+
+**3 tests passed**
+
+### 5.8 Cartera en riesgo
+
+Las pruebas de cartera verifican el desglose requerido:
+
+`3.00 % + 2.25 % + 1.00 % + 0.75 % = 7.00 %`
+
+También se verifica la diferencia entre:
+
+- **Cartera en riesgo: 7.00 %**
+- **Cartera en mora: 21.75 %**
+
+Esto permite evitar que ambos indicadores sean tratados como si representaran el mismo concepto.
+
+---
 
 ## 6. Conclusión
 
-La evolución del Proyecto 1 al Proyecto 2 permitió comprobar de manera práctica el comportamiento del diseño frente a nuevos requisitos.
+La evolución realizada en el Proyecto 2 permitió comprobar los principios SOLID del núcleo utilizando cambios reales en lugar de limitarse a una explicación teórica.
 
-La medición mediante Git mostró que la evolución requirió modificar tres archivos existentes del núcleo. El principal punto de fricción se encontró en `CalculadoraMora.ts`, debido a que en P1 la fórmula de mora se encontraba implementada directamente en la calculadora. Para soportar diferentes políticas fue necesario realizar un rediseño e introducir el contrato `PoliticaMora`.
+La comparación entre P1 y P2 muestra que se agregaron **7 archivos nuevos** y fue necesario modificar **3 archivos existentes** dentro de `src/dominio/`.
 
-A partir de este cambio, las políticas plana, escalonada y retroactiva se encuentran separadas y pueden utilizarse mediante una misma abstracción. Las pruebas de contrato proporcionan evidencia de que estas implementaciones pueden sustituirse conservando el comportamiento esperado.
+El principal punto de fricción fue `CalculadoraMora.ts`.
 
-También fue necesario extender `CalculadoraCarteraRiesgo.ts` para incorporar los nuevos indicadores de cartera y `CreditoEnMora.ts` para permitir la nueva transición hacia el estado `CANCELADO`.
+La necesidad de modificar este archivo demuestra que el diseño del Proyecto 1 no cumplía completamente con el principio Abierto/Cerrado para el cambio de políticas de mora solicitado en P2.
 
-La medición obtenida no representa un cumplimiento perfecto de todos los objetivos orientativos del enunciado, ya que fue necesario modificar tres archivos existentes y el motor de cálculo de mora tuvo que ser abierto durante la evolución. Estos resultados se consideran evidencia de los puntos de acoplamiento existentes en el diseño de P1.
+Como respuesta se introdujo la abstracción `PoliticaMora` y un diseño basado en Strategy. Esto permite que las políticas plana, escalonada y retroactiva compartan un mismo contrato y que nuevas políticas puedan incorporarse con menor impacto en el motor.
 
-El rediseño realizado en P2 mejora la extensibilidad del núcleo al introducir abstracciones y separar comportamientos variables. Además, la suite completa finaliza con 23 archivos de prueba y 77 pruebas aprobadas, sin regresiones detectadas en los casos de referencia del Proyecto 1.
+También se identificaron cambios necesarios en `CalculadoraCarteraRiesgo.ts` y `CreditoEnMora.ts` debido a los nuevos requisitos de cartera y estados del crédito.
 
-Por lo tanto, el informe evidencia tanto los aspectos del diseño que facilitaron la evolución como los puntos que requirieron refactorización, utilizando el historial de Git y las pruebas automatizadas como respaldo de la evaluación de SOLID.
+A pesar de estas modificaciones, la evolución no produjo regresiones detectadas por la suite actual. La ejecución final obtuvo:
+
+- **23 archivos de prueba aprobados**
+- **77 pruebas aprobadas**
+- **0 pruebas fallidas**
+- **0 pruebas del P1 reescritas para ocultar regresiones**
+- **TypeScript sin errores con `npx tsc --noEmit`**
+
+El resultado muestra que el diseño del Proyecto 1 tenía áreas mejorables, principalmente respecto a OCP, pero también permitió evolucionar el núcleo conservando el comportamiento anterior y agregando nuevas reglas mediante abstracciones y pruebas automatizadas.
+
+Si se diseñara nuevamente esta parte del núcleo desde el inicio, el motor de mora dependería desde P1 de una abstracción de política, evitando que un cambio de estrategia obligara a modificar `CalculadoraMora`.
+
+En conclusión, la evolución de P2 permitió no solamente incorporar los nuevos requisitos financieros, sino también medir de forma concreta las fortalezas y debilidades del diseño original y mejorar su capacidad de extensión.
