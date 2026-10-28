@@ -56,3 +56,26 @@ export async function obtenerPagosPorCredito(
 
   return resultado.rows;
 }
+
+export async function obtenerPagosPorCreditoHastaFecha(
+  idCredito: string,
+  fechaCorte: string
+): Promise<Pago[]> {
+  const resultado = await pool.query<Pago>(
+    `SELECT
+        id_pago,
+        clave_idempotencia,
+        id_credito,
+        TO_CHAR(fecha, 'YYYY-MM-DD') AS fecha,
+        monto_centavos,
+        canal,
+        seq_evento
+     FROM pagos
+     WHERE id_credito = $1
+       AND fecha <= $2::date
+     ORDER BY fecha, seq_evento, id_pago`,
+    [idCredito, fechaCorte]
+  );
+
+  return resultado.rows;
+}
