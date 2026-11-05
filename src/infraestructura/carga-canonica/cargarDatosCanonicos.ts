@@ -123,7 +123,7 @@ export async function cargarDatosCanonicos(): Promise<void> {
 
   const datos = await leerDatosCanonicos();
 
-  console.log("SHA-256: VERIFICADO");
+  console.log("\u001b[32mSHA-256: VERIFICADO\u001b[0m");
   console.log("Eventos validados:", datos.eventos.length);
 
   const cliente = await pool.connect();

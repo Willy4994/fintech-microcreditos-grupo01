@@ -1,3 +1,4 @@
+import { directorioDatos } from "./directorio.js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -22,10 +23,7 @@ export interface ResultadoReferencias {
 }
 
 export async function validarReferencias(): Promise<ResultadoReferencias> {
-  const ruta = path.resolve(
-    process.cwd(),
-    "datos/datos-proyecto-final/eventos.jsonl"
-  );
+  const ruta = path.join(directorioDatos(), "eventos.jsonl");
 
   const contenido = await readFile(ruta, "utf8");
 

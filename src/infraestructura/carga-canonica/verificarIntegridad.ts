@@ -1,3 +1,4 @@
+import { directorioDatos } from "./directorio.js";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -10,10 +11,7 @@ export interface ResultadoIntegridad {
 }
 
 export async function verificarIntegridad(): Promise<ResultadoIntegridad> {
-  const directorio = path.resolve(
-    process.cwd(),
-    "datos/datos-proyecto-final"
-  );
+  const directorio = directorioDatos();
 
   const rutaEventos = path.join(directorio, "eventos.jsonl");
   const rutaHuella = path.join(directorio, "eventos.sha256");

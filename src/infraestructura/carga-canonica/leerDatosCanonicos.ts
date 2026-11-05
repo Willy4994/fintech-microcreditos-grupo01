@@ -1,3 +1,4 @@
+import { directorioDatos } from "./directorio.js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -27,10 +28,7 @@ export interface DatosCanonicos {
 }
 
 export async function leerDatosCanonicos(): Promise<DatosCanonicos> {
-  const directorio = path.resolve(
-    process.cwd(),
-    "datos/datos-proyecto-final"
-  );
+  const directorio = directorioDatos();
 
   // Leer eventos.
   const contenidoEventos = await readFile(
