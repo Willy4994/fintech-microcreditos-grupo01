@@ -30,3 +30,16 @@ export class CalculadoraDevengoInteres {
     };
   }
 }
+/** Libro del devengo: el suspenso permanece como cuenta de orden hasta regularizar. */
+export class LibroDevengo {
+  private suspenso: Dinero = Dinero.desdeCentavos(0, 'GTQ');
+  registrar(interes: Dinero, dias: DiasAtraso, regularizado: boolean): ResultadoDevengoInteres {
+    if (dias.obtenerValor() > 90 && !regularizado) {
+      this.suspenso = this.suspenso.sumar(interes);
+      return { interesReconocido: Dinero.desdeCentavos(0, interes.moneda), interesEnSuspenso: this.suspenso };
+    }
+    const reconocido = interes.sumar(this.suspenso);
+    this.suspenso = Dinero.desdeCentavos(0, interes.moneda);
+    return { interesReconocido: reconocido, interesEnSuspenso: this.suspenso };
+  }
+}

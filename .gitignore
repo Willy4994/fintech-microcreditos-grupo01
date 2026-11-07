@@ -2,5 +2,9 @@ node_modules/
 dist/
 coverage/
 .env
+.env.*
+!.env.example
 .DS_Store
 /datos/
+/test-results/
+/playwright-report/

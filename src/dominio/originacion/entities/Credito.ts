@@ -156,7 +156,8 @@ export class Credito {
 
   cancelar(
     saldoCapitalRestante: Dinero,
-    contexto: ContextoTransicionCredito
+    contexto: ContextoTransicionCredito,
+    cuotasVencidasPendientes = 0
   ): void {
     if (saldoCapitalRestante.moneda !== this.capital.moneda) {
       throw new Error(
@@ -168,6 +169,10 @@ export class Credito {
       throw new Error(
         "Solo puede cancelarse un crédito con saldo de capital cero"
       );
+    }
+
+    if (!Number.isInteger(cuotasVencidasPendientes) || cuotasVencidasPendientes !== 0) {
+      throw new Error("No puede cancelar con cuotas vencidas pendientes");
     }
 
     this.cambiarEstado(this.estado.cancelar(), contexto);

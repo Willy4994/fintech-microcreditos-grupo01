@@ -25,10 +25,10 @@ export class PoliticaPlana implements PoliticaMora {
     const interes = capitalEnMora
       .toDecimal()
       .times(tasaDiaria)
-      .times(diasAtraso.obtenerValor());
+      .times(Math.min(120, diasAtraso.obtenerValor()));
 
     return Dinero.desdeDecimal(
-      interes,
+      Decimal.min(interes, capitalEnMora.toDecimal()),
       capitalEnMora.moneda
     );
   }

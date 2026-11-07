@@ -9,7 +9,23 @@
   },
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "start": "node --env-file-if-exists=.env dist/src/infraestructura/http/servidor.js",
+    "mcp": "node --env-file-if-exists=.env dist/src/infraestructura/mcp/servidorMCP.js",
+    "db:migrate": "node --env-file-if-exists=.env dist/scripts/migrar.js",
+    "data:load": "node --env-file-if-exists=.env dist/src/infraestructura/carga-canonica/ejecutarCarga.js",
+    "rag:ingest": "node --env-file-if-exists=.env dist/scripts/ingerir.js",
+    "test:evals": "vitest run tests/evals",
+    "test:integration": "vitest run tests/integracion",
+    "pretest": "npm run build",
+    "evals:live": "node --env-file-if-exists=.env dist/scripts/evaluar-modelo.js",
+    "contracts": "npm run build && node dist/scripts/generar-contratos.js",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "build:all": "npm run build && npm run frontend:build",
+    "test:ui": "playwright test --config frontend/playwright.config.ts"
   },
   "repository": {
     "type": "git",
@@ -24,17 +40,29 @@
   },
   "homepage": "https://github.com/Willy4994/fintech-microcreditos-grupo01#readme",
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
+    "@electric-sql/pglite-pgvector": "^0.0.16",
+    "@playwright/test": "^1.64.1",
     "@types/express": "^5.0.6",
     "@types/node": "^26.2.0",
     "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
+    "prettier": "^3.9.10",
+    "supertest": "^7.3.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },
   "dependencies": {
+    "@langchain/ollama": "^1.3.0",
+    "@langchain/textsplitters": "^1.0.2",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "date-fns": "^4.4.0",
     "decimal.js": "^10.6.0",
     "express": "^5.3.0",
     "pg": "^8.23.1",
     "zod": "^4.4.3"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

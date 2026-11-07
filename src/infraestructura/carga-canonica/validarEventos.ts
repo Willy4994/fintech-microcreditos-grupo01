@@ -1,3 +1,5 @@
+import { fechaSchema } from "../../aplicacion/errores.js";
+import { directorioDatos } from "./directorio.js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -53,7 +55,7 @@ function exigirFecha(
 ): void {
   const fecha = exigirTexto(evento, campo);
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+  if (!fechaSchema.safeParse(fecha).success) {
     throw new Error(
       `Evento ${evento.seq}: fecha '${campo}' inválida.`
     );
@@ -61,10 +63,7 @@ function exigirFecha(
 }
 
 export async function validarEventos(): Promise<ResultadoValidacion> {
-  const ruta = path.resolve(
-    process.cwd(),
-    "datos/datos-proyecto-final/eventos.jsonl"
-  );
+  const ruta = path.join(directorioDatos(), "eventos.jsonl");
 
   const contenido = await readFile(ruta, "utf8");
 

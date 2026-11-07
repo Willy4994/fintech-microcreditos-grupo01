@@ -13,7 +13,7 @@ export class PoliticaRetroactiva implements PoliticaMora {
     baseConteo: BaseConteo,
     diasAtraso: DiasAtraso
   ): Dinero {
-    const dias = diasAtraso.obtenerValor();
+    const dias = Math.min(120, diasAtraso.obtenerValor());
 
     const divisor = baseConteo === "ACTUAL_365"
       ? new Decimal(365)
@@ -31,7 +31,7 @@ export class PoliticaRetroactiva implements PoliticaMora {
       .times(dias);
 
     return Dinero.desdeDecimal(
-      interes,
+      Decimal.min(interes, capitalEnMora.toDecimal()),
       capitalEnMora.moneda
     );
   }
