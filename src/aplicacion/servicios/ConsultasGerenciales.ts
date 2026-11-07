@@ -9,6 +9,32 @@ export class ConsultasGerenciales {
   async cartera(fecha: string) {
     return cartera(await this.repo.leer(), fecha);
   }
+  async listar(fecha: string, tramo?: string) {
+    fechaValida(fecha);
+    const datos = await this.repo.leer();
+    return datos.creditos
+      .filter((c) => c.fecha_desembolso <= fecha)
+      .map((c) => {
+        const e = reconstruir(datos, c.id_credito, fecha);
+        return {
+          ...c,
+          estado: e.estado,
+          tramo: e.tramo,
+          dias_atraso: e.dias_atraso,
+          capital_pendiente_centavos: e.capital_pendiente_centavos,
+        };
+      })
+      .filter(
+        (c) =>
+          !tramo ||
+          (tramo === "REESTRUCTURADO"
+            ? c.reestructurado &&
+              c.dias_atraso <= 30 &&
+              c.estado !== "CANCELADO" &&
+              c.estado !== "INCOBRABLE"
+            : c.tramo === tramo),
+      );
+  }
   async morosos(fecha: string, tramo?: string) {
     fechaValida(fecha);
     const datos = await this.repo.leer();

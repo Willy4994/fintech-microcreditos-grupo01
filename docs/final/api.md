@@ -108,3 +108,25 @@ fechas omitidas por el modelo: las herramientas rechazan parámetros incompletos
 Respuesta: `sesion`, `fecha_corte`, `respuesta`, `evidencias` y `fuentes`. Los reportes financieros
 se presentan desde los resultados MCP de forma determinista en quetzales. La explicación
 de políticas usa el modelo y sus fuentes; se requiere revisar su fidelidad semántica.
+
+## Sesión de la interfaz
+
+`POST /api/sesion` usa el token humano en Authorization y recibe `{actor, perfil}`, con
+perfil `asesor` o `gerencia`. Devuelve actor/perfil y una cookie de sesión HttpOnly,
+SameSite=Strict, válida ocho horas. La clave no se conserva en el frontend.
+`GET /api/sesion` consulta el perfil; `DELETE /api/sesion` invalida la sesión y cookie.
+Se conserva el acceso Bearer para los comandos de prueba anteriores.
+
+El perfil asesor no accede a chat ni a generación de cierres mediante la sesión web.
+Las mutaciones con cookie comprueban que Origin y Host coincidan. En desarrollo Vite
+conserva el Host original al reenviar las peticiones. Es acceso local compartido, sin
+usuarios empresariales individuales.
+
+`GET /api/cartera/creditos?fecha=...&tramo=...` devuelve estados calculados al corte,
+incluyendo incobrables y reestructurados, sin inferir vigencia por ausencia en morosos.
+`GET /api/clientes/etiquetas` y `GET /api/creditos/:id/cliente` requieren acceso humano y
+solo exponen el nombre e identificador; no retornan DPI ni teléfonos.
+
+Las cuotas incluyen monto y saldo programados del plan, ambos calculados por el núcleo.
+`GET /api/cierres` añade `persistido` para distinguir consulta calculada de cierre guardado.
+Después de compilar el frontend, Express sirve la aplicación desde el mismo origen.

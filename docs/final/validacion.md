@@ -4,7 +4,7 @@ Revisión local: 3 de noviembre de 2026 (America/Guatemala).
 
 | Comprobación | Resultado observado |
 |---|---|
-| `npm test` (incluye compilación) | 35 archivos y 156 pruebas aprobados |
+| `npm test` (incluye compilación) | 36 archivos y 160 pruebas aprobados |
 | `npm run check` | Sin errores TypeScript |
 | `git diff --check` | Sin errores de espacios |
 | `npm run evals:live`, evaluación versión 2 | 10 casos aprobados con Ollama y PostgreSQL locales; incluye G-6-30 en la misma sesión |
@@ -26,7 +26,7 @@ parámetros, datos contra consulta directa y presentación monetaria determinist
 de citas de la política correcta y el seguimiento de 7 a 30 días.
 
 Pendiente: revisión semántica de cada afirmación del RAG, concurrencia de múltiples
-conexiones PostgreSQL, comparación con oráculos privados del docente, frontend y video.
+conexiones PostgreSQL, comparación con oráculos privados del docente y video.
 
 El README y la guía interna de entregables describen el alcance y los pendientes.
 
@@ -55,3 +55,23 @@ plana, 24 % nominal anual, Actual/360, con citas POL-2024-01:1 y POL-2024-01:2.
 Evidencia: `resultados/evals-regresion-rag.json`. El guion completo añade este caso como
 G-8-regresion. No se ha repetido toda la suite de evals reales tras este ajuste; sí se
 repitieron la suite automatizada y la pregunta exacta con el modelo real.
+
+## Interfaz implementada
+
+- React + Vite + Tailwind, conservando la identidad azul/celeste del prototipo P2.
+- Siete pantallas conectadas a la API; originación con simulación y confirmación separadas.
+- Acceso por perfil, cookie HttpOnly, cierre de sesión y comprobación de origen.
+- Mora por tramos, pago exacto, revisión humana, comprobante y reintento con la misma clave.
+- Cierre diario/mensual con confirmación explícita y estado de cifras congeladas.
+- Chat integrado, memoria de conversación, citas y apertura del contenido recuperado.
+- `npm run build:all`: backend y frontend compilados sin errores.
+- `npm test`: 160 pruebas aprobadas; incluye sesión, perfil, cookie y origen por HTTP.
+- `npm run test:ui`: diez casos aprobados, cinco en escritorio y cinco a 390 px.
+
+Los flujos que escriben datos usan respuestas aisladas en las pruebas de navegador.
+La revisión adicional contra PostgreSQL local fue de solo lectura: tablero y detalle de
+mora, sin errores de JavaScript ni desbordamiento horizontal móvil. No se registraron
+pagos, desembolsos ni cierres en la cartera real durante esta tarea.
+
+La implementación no afirma conformidad WCAG completa ni incluye una cola de pagos
+sin conexión. No sustituye el ensayo final del guion ni la revisión de cifras del docente.

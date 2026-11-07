@@ -11,6 +11,360 @@
     }
   ],
   "paths": {
+    "/api/sesion": {
+      "get": {
+        "summary": "Consultar perfil de sesión local",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Resultado JSON; importes enteros en centavos GTQ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sesion": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Abrir sesión humana local (cookie HttpOnly)",
+        "parameters": [],
+        "security": [
+          {
+            "humano": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 80
+                  },
+                  "perfil": {
+                    "type": "string",
+                    "enum": [
+                      "asesor",
+                      "gerencia"
+                    ]
+                  }
+                },
+                "required": [
+                  "actor",
+                  "perfil"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado JSON; importes enteros en centavos GTQ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cerrar sesión e invalidar cookie",
+        "responses": {
+          "204": {
+            "description": "Sesión cerrada"
+          }
+        }
+      }
+    },
+    "/api/clientes/etiquetas": {
+      "get": {
+        "summary": "Nombres de clientes para la interfaz, sin DPI ni teléfonos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Resultado JSON; importes enteros en centavos GTQ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "humano": []
+          },
+          {
+            "sesion": []
+          }
+        ]
+      }
+    },
+    "/api/creditos/{id}/cliente": {
+      "get": {
+        "summary": "Etiqueta de cliente de un crédito",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado JSON; importes enteros en centavos GTQ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "humano": []
+          },
+          {
+            "sesion": []
+          }
+        ]
+      }
+    },
+    "/api/cartera/creditos": {
+      "get": {
+        "summary": "Créditos y estados al corte",
+        "parameters": [
+          {
+            "name": "fecha",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "tramo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado JSON; importes enteros en centavos GTQ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error uniforme",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Disponibilidad",
@@ -632,6 +986,9 @@
         "security": [
           {
             "humano": []
+          },
+          {
+            "sesion": []
           }
         ],
         "requestBody": {
@@ -849,6 +1206,9 @@
         "security": [
           {
             "humano": []
+          },
+          {
+            "sesion": []
           }
         ],
         "requestBody": {
@@ -1172,6 +1532,9 @@
         "security": [
           {
             "humano": []
+          },
+          {
+            "sesion": []
           }
         ]
       }
@@ -1192,6 +1555,9 @@
         "security": [
           {
             "humano": []
+          },
+          {
+            "sesion": []
           }
         ],
         "requestBody": {
@@ -1292,6 +1658,9 @@
         "security": [
           {
             "humano": []
+          },
+          {
+            "sesion": []
           }
         ],
         "requestBody": {
@@ -1398,6 +1767,11 @@
       "humano": {
         "type": "http",
         "scheme": "bearer"
+      },
+      "sesion": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "cv_sesion"
       }
     },
     "schemas": {

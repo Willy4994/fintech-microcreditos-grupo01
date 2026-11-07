@@ -380,6 +380,8 @@ export function reconstruir(datos: DatosCartera, id: string, corte: string) {
     return {
       numero: c.numero,
       fecha_vencimiento: c.fecha_vencimiento,
+      monto_programado_centavos: c.monto_centavos,
+      saldo_programado_centavos: c.saldo_centavos,
       capital_programado_centavos: c.capital_centavos,
       capital_pagado_centavos: c.capital_pagado_centavos,
       interes_pagado_centavos: c.interes_pagado_centavos,

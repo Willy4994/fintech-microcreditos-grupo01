@@ -37,6 +37,7 @@ type FuenteRag = {
 };
 
 export interface PuertoMcp {
+  cerrar?(): Promise<void>;
   herramientas(): Promise<
     {
       name: string;
@@ -52,17 +53,11 @@ export interface PuertoMcp {
 }
 
 export interface ModeloChat {
-  responder(
-    mensajes: Mensaje[],
-    herramientas: unknown[],
-  ): Promise<Mensaje>;
+  responder(mensajes: Mensaje[], herramientas: unknown[]): Promise<Mensaje>;
 }
 
 export class ModeloOllama implements ModeloChat {
-  async responder(
-    messages: Mensaje[],
-    tools: unknown[],
-  ): Promise<Mensaje> {
+  async responder(messages: Mensaje[], tools: unknown[]): Promise<Mensaje> {
     const r = await fetch(
       `${process.env.OLLAMA_URL ?? "http://localhost:11434"}/api/chat`,
       {
@@ -133,17 +128,12 @@ export class ServicioAsistente {
 
         return resultado.filter(
           (f): f is FuenteRag =>
-            typeof f === "object" &&
-            f !== null &&
-            typeof f.id === "string",
+            typeof f === "object" && f !== null && typeof f.id === "string",
         );
       });
   }
 
-  private validarVigencia(
-    contenido: string,
-    fuentes: FuenteRag[],
-  ): void {
+  private validarVigencia(contenido: string, fuentes: FuenteRag[]): void {
     const aplicables = new Set(
       fuentes
         .map((f) => f.politica_aplicable)
@@ -154,8 +144,7 @@ export class ServicioAsistente {
       return;
     }
 
-    const mencionadas =
-      contenido.match(/POL-\d{4}-\d{2}/g) ?? [];
+    const mencionadas = contenido.match(/POL-\d{4}-\d{2}/g) ?? [];
 
     if (mencionadas.some((id) => !aplicables.has(id))) {
       throw new ErrorAplicacion(
@@ -166,20 +155,16 @@ export class ServicioAsistente {
     }
   }
 
-  private citasValidas(
-    contenido: string,
-    fuentes: FuenteRag[],
-  ): boolean {
+  private citasValidas(contenido: string, fuentes: FuenteRag[]): boolean {
     const ids = new Set(fuentes.map((f) => f.id));
 
-    const citas = [
-      ...contenido.matchAll(/\[([A-Z][A-Z0-9-]+:\d+)\]/g),
-    ].map((c) => c[1]);
+    const citas = [...contenido.matchAll(/\[([A-Z][A-Z0-9-]+:\d+)\]/g)].map(
+      (c) => c[1],
+    );
 
     return (
-  citas.length > 0 &&
-  citas.every((c) => c !== undefined && ids.has(c))
-);
+      citas.length > 0 && citas.every((c) => c !== undefined && ids.has(c))
+    );
   }
 
   private async corregirCitas(
@@ -226,10 +211,7 @@ INSTRUCCIONES OBLIGATORIAS:
       );
     }
 
-    this.validarVigencia(
-      correccion.content,
-      fuentes,
-    );
+    this.validarVigencia(correccion.content, fuentes);
 
     if (!this.citasValidas(correccion.content, fuentes)) {
       throw new ErrorAplicacion(
@@ -242,11 +224,12 @@ INSTRUCCIONES OBLIGATORIAS:
     return correccion.content;
   }
 
-  async conversar(
-    pregunta: string,
-    fecha: string,
-    sesion?: string,
-  ) {
+  async cerrar() {
+    this.sesiones.clear();
+    await this.mcp.cerrar?.();
+  }
+
+  async conversar(pregunta: string, fecha: string, sesion?: string) {
     fechaValida(fecha);
 
     if (!pregunta.trim() || pregunta.length > 4000) {
@@ -351,6 +334,9 @@ INSTRUCCIONES OBLIGATORIAS:
           role: "system",
           content: `
 Eres el asistente gerencial de Crédito Vecino.
+Atiende únicamente créditos, pagos, cartera, mora, cierres y políticas institucionales.
+Para saludos o preguntas ajenas (por ejemplo, fútbol), no llames herramientas ni respondas datos generales: orienta al usuario hacia ese ámbito.
+Nunca llames herramientas irrelevantes para justificar una respuesta fuera de ámbito.
 
 Fecha de corte de esta sesión: ${fecha}.
 
@@ -367,6 +353,7 @@ El servidor presentará las cifras financieras en quetzales
 de forma determinista.
 
 No redactes fórmulas financieras.
+Las consultas generales sobre solicitar créditos, requisitos, productos y condiciones sí están dentro del ámbito: consulta buscar_politicas. No necesitan identificador de crédito. Si las fuentes no contienen requisitos de admisión, explica esa limitación y sugiere confirmarlos con el asesor; no inventes documentos, ingresos ni garantías.
 
 Cierre de un día usa desde=hasta.
 
@@ -410,20 +397,79 @@ REGLAS OBLIGATORIAS PARA RESPUESTAS DOCUMENTALES:
       }[] = [];
 
       for (let paso = 0; paso < 8; paso++) {
-        const m = await this.modelo.responder(
-          mensajes,
-          tools,
-        );
+        const m = await this.modelo.responder(mensajes, tools);
 
         mensajes.push(m);
 
         if (!m.tool_calls?.length) {
           if (!evidencias.length) {
-            throw new ErrorAplicacion(
-              "SIN_EVIDENCIA",
-              "El modelo no consultó las herramientas. Reformule la pregunta.",
-              502,
+            const texto = pregunta
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toLowerCase();
+            const informativa =
+              /\b(credito|creditos|prestamo|prestamos|producto|productos|pago|pagos)\b/.test(
+                texto,
+              ) &&
+              /\b(necesito|necesita|necesitan|requisito|requisitos|pedir|solicitar|solicita|documentos|documentacion|condiciones|funciona|ofrecen|puedo)\b/.test(
+                texto,
+              );
+            if (
+              informativa &&
+              catalogo.some((h) => h.name === "buscar_politicas")
+            ) {
+              const parametros = { pregunta, fecha };
+              const resultado = await this.mcp.ejecutar(
+                "buscar_politicas",
+                parametros,
+              );
+              datosHerramienta(resultado);
+              evidencias.push({
+                herramienta: "buscar_politicas",
+                parametros,
+                resultado,
+              });
+              mensajes[mensajes.length - 1] = {
+                role: "assistant",
+                content: "",
+                tool_calls: [
+                  {
+                    function: {
+                      name: "buscar_politicas",
+                      arguments: parametros,
+                    },
+                  },
+                ],
+              };
+              mensajes.push({
+                role: "tool",
+                tool_name: "buscar_politicas",
+                content: JSON.stringify(datosHerramienta(resultado)),
+              });
+              mensajes.push({
+                role: "system",
+                content:
+                  "La pregunta trata del producto de Crédito Vecino. Responde con estas fuentes y citas. Si no documentan requisitos de admisión, indícalo y remite al asesor para confirmarlos; no inventes documentos, ingresos, garantías ni criterios de aprobación.",
+              });
+              continue;
+            }
+            // Sin evidencia no se muestra texto libre del modelo ni cifras sin respaldo.
+            const respuesta =
+              "Soy el asistente de Crédito Vecino. Puedo ayudarte con créditos, pagos, mora, cartera, cierres y políticas de la institución. Solo atiendo consultas relacionadas con Crédito Vecino.\n\nSi tu pregunta es sobre el sistema, indica qué necesitas consultar y, cuando corresponda, el crédito o período. Por ejemplo: «¿Cómo está la cartera al 31 de octubre de 2026?» o «¿Cómo se calcula la mora de este crédito?»";
+            s.mensajes.push(
+              { role: "user", content: pregunta },
+              { role: "assistant", content: respuesta },
             );
+            if (s.mensajes.length > 80) s.mensajes = s.mensajes.slice(-2);
+            s.actualizado = ahora;
+            this.sesiones.set(id, s);
+            return {
+              sesion: id,
+              fecha_corte: fecha,
+              respuesta,
+              evidencias: [],
+              fuentes: [],
+            };
           }
 
           const recuperaciones = evidencias.filter(
@@ -433,22 +479,13 @@ REGLAS OBLIGATORIAS PARA RESPUESTAS DOCUMENTALES:
           if (recuperaciones.length) {
             const fuentes = this.extraerFuentes(evidencias);
 
-            this.validarVigencia(
-              m.content,
-              fuentes,
-            );
+            this.validarVigencia(m.content, fuentes);
 
             if (!this.citasValidas(m.content, fuentes)) {
-              m.content = await this.corregirCitas(
-                mensajes,
-                fuentes,
-              );
+              m.content = await this.corregirCitas(mensajes, fuentes);
             }
 
-            this.validarVigencia(
-              m.content,
-              fuentes,
-            );
+            this.validarVigencia(m.content, fuentes);
 
             if (!this.citasValidas(m.content, fuentes)) {
               throw new ErrorAplicacion(
@@ -465,16 +502,11 @@ REGLAS OBLIGATORIAS PARA RESPUESTAS DOCUMENTALES:
             ? finanzas
               ? recuperaciones
                   .flatMap((e) => {
-                    const fuentes = datosHerramienta(
-                      e.resultado,
-                    );
+                    const fuentes = datosHerramienta(e.resultado);
 
                     return Array.isArray(fuentes)
                       ? fuentes.map(
-                          (f: {
-                            id: string;
-                            contenido: string;
-                          }) =>
+                          (f: { id: string; contenido: string }) =>
                             `[${f.id}]\n${f.contenido}`,
                         )
                       : [];
@@ -483,15 +515,44 @@ REGLAS OBLIGATORIAS PARA RESPUESTAS DOCUMENTALES:
               : m.content
             : "";
 
-          const respuesta = (
+          let respuesta = (
             finanzas +
             (finanzas && textoPoliticas ? "\n\n" : "") +
             textoPoliticas
-          ).replace(
-            /\b\d{13}\b/g,
-            "[dato personal omitido]",
-          );
+          ).replace(/\b\d{13}\b/g, "[dato personal omitido]");
 
+          const consultaNormalizada = pregunta
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+          if (
+            !finanzas &&
+            recuperaciones.length &&
+            /\b(credito|creditos|prestamo|prestamos)\b/.test(
+              consultaNormalizada,
+            ) &&
+            /\b(requisitos?|documentos?|documentacion)\b|para\s+(pedir|solicitar)\b/.test(
+              consultaNormalizada,
+            )
+          ) {
+            const fuentes = this.extraerFuentes(evidencias);
+            const manual = fuentes.find(
+              (f) =>
+                f.id.startsWith("MAN-PRODUCTO-01:") &&
+                f.contenido?.includes("## Tasas"),
+            );
+            const texto = manual?.contenido
+              ?.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
+              .split("##")[0]
+              ?.replace(/^#.*$/gm, "")
+              .trim();
+            respuesta =
+              "Para pedir un crédito, un asesor debe confirmar contigo los requisitos y documentos de admisión. Con las fuentes recuperadas no puedo confirmar una lista completa; no sería correcto inventar documentos, ingresos mínimos o garantías." +
+              (texto && manual
+                ? `\n\nEl manual sí describe estas condiciones del producto:\n\n${texto} [${manual.id}]`
+                : "") +
+              "\n\nPuedes iniciar la solicitud con un asesor de Crédito Vecino y confirmar qué documentación corresponde a tu caso.";
+          }
           mensajes[mensajes.length - 1] = {
             role: "assistant",
             content: respuesta,
@@ -520,9 +581,7 @@ REGLAS OBLIGATORIAS PARA RESPUESTAS DOCUMENTALES:
             fecha_corte: fecha,
             respuesta,
             evidencias,
-            fuentes: recuperaciones.map(
-              (e) => e.resultado,
-            ),
+            fuentes: recuperaciones.map((e) => e.resultado),
           };
         }
 
@@ -554,10 +613,7 @@ REGLAS OBLIGATORIAS PARA RESPUESTAS DOCUMENTALES:
             );
           }
 
-          const resultado = await this.mcp.ejecutar(
-            name,
-            parametros,
-          );
+          const resultado = await this.mcp.ejecutar(name, parametros);
 
           const datos = datosHerramienta(resultado);
 

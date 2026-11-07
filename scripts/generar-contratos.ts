@@ -1,3 +1,4 @@
+import { accesoSchema } from "../src/infraestructura/http/sesiones.js";
 import { z } from "zod";
 import { writeFile } from "node:fs/promises";
 import { crearCatalogo } from "../src/infraestructura/mcp/catalogo.js";
@@ -46,7 +47,7 @@ const post = (
 ) => ({
   summary,
   parameters,
-  ...(humano ? { security: [{ humano: [] }] } : {}),
+  ...(humano ? { security: [{ humano: [] }, { sesion: [] }] } : {}),
   requestBody: {
     required: true,
     content: { "application/json": { schema: z.toJSONSchema(schema) } },
@@ -63,6 +64,42 @@ const post = (
 const id = parameter("id", "path", { type: "string" });
 const corte = parameter("fecha");
 const paths = {
+  "/api/sesion": {
+    get: {
+      ...get("Consultar perfil de sesión local"),
+      security: [{ sesion: [] }],
+    },
+    post: {
+      ...post(
+        "Abrir sesión humana local (cookie HttpOnly)",
+        accesoSchema,
+        true,
+      ),
+      security: [{ humano: [] }],
+    },
+    delete: {
+      summary: "Cerrar sesión e invalidar cookie",
+      responses: { "204": { description: "Sesión cerrada" } },
+    },
+  },
+  "/api/clientes/etiquetas": {
+    get: {
+      ...get("Nombres de clientes para la interfaz, sin DPI ni teléfonos"),
+      security: [{ humano: [] }, { sesion: [] }],
+    },
+  },
+  "/api/creditos/{id}/cliente": {
+    get: {
+      ...get("Etiqueta de cliente de un crédito", [id]),
+      security: [{ humano: [] }, { sesion: [] }],
+    },
+  },
+  "/api/cartera/creditos": {
+    get: get("Créditos y estados al corte", [
+      corte,
+      parameter("tramo", "query", { type: "string" }, false),
+    ]),
+  },
   "/api/health": { get: get("Disponibilidad") },
   "/api/creditos": {
     get: {
@@ -125,7 +162,7 @@ const paths = {
   "/api/aprobaciones": {
     get: {
       ...get("Aprobaciones pendientes e históricas"),
-      security: [{ humano: [] }],
+      security: [{ humano: [] }, { sesion: [] }],
     },
   },
   "/api/aprobaciones/{id}/decision": {
@@ -149,7 +186,10 @@ await writeFile(
       servers: [{ url: "http://127.0.0.1:3000" }],
       paths,
       components: {
-        securitySchemes: { humano: { type: "http", scheme: "bearer" } },
+        securitySchemes: {
+          humano: { type: "http", scheme: "bearer" },
+          sesion: { type: "apiKey", in: "cookie", name: "cv_sesion" },
+        },
         schemas: {
           Error: {
             type: "object",

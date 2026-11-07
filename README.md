@@ -1,10 +1,15 @@
 # Crédito Vecino — Sistema de microcrédito y asistente gerencial
 
-Proyecto incremental P1 → P2 → Final, grupo 01, Análisis de Sistemas II (037).
+Sistema de microcréditos desarrollado por el grupo 01 para Análisis de Sistemas II (037),
+construido de forma incremental durante las fases de arquitectura, diseño e implementación.
 
-Backend implementado: PostgreSQL, carga canónica, consultas financieras, operaciones,
-servidor MCP, RAG con pgvector y asistente Ollama. **El frontend React se realizará después**;
-el chat y la aprobación ya tienen API, pero todavía no hay pantallas ni video de defensa.
+La aplicación permite registrar clientes, simular y desembolsar créditos, consultar cuotas
+y mora, registrar pagos con confirmación humana y consultar indicadores y cierres. Incluye
+un asistente gerencial para consultar información financiera y políticas institucionales.
+
+La interfaz está desarrollada con React y Vite y se conecta a una API financiera con
+PostgreSQL, un servidor MCP y un servicio RAG con pgvector y modelos locales de Ollama.
+El diseño conserva la identidad azul y celeste y los recorridos del prototipo de la segunda fase.
 
 ## Requisitos
 
@@ -21,6 +26,7 @@ el chat y la aprobación ya tienen API, pero todavía no hay pantallas ni video 
 
 ```bash
 npm ci
+npm --prefix frontend ci
 openssl rand -hex 32
 ```
 
@@ -32,18 +38,18 @@ Pegar el token generado en `HUMAN_API_TOKEN` dentro de `.env`. No publicar ese a
 pgAdmin administra el servidor PostgreSQL; el sistema se conecta directamente a ese
 servidor mediante las credenciales de `.env`.
 
-1. En pgAdmin, conectar con el servidor que ya utilizas.
+1. En pgAdmin, conectar con el servidor PostgreSQL de la instalación.
 2. Revisar **Properties → Connection** del servidor para consultar host, puerto y usuario.
 3. Comprobar que exista la base `credito_vecino`. Si ya existe, conservarla. Si no existe,
    crearla desde **Databases → Create → Database** y elegir el propietario correspondiente.
-4. Ajustar `.env` con los datos reales de tu instalación:
+4. Ajustar `.env` con los datos de conexión de la instalación:
 
 ```dotenv
 PGHOST=localhost
 PGPORT=5432
 PGDATABASE=credito_vecino
-PGUSER=tu_usuario_postgresql
-PGPASSWORD=tu_contraseña_postgresql
+PGUSER=usuario_postgresql
+PGPASSWORD=contraseña_postgresql
 ```
 
 La contraseña es la del usuario de PostgreSQL, que puede ser distinta de la contraseña
@@ -58,7 +64,7 @@ WHERE name = 'vector';
 ```
 
 Si aparece una fila, la extensión está disponible. Las migraciones intentan activarla
-con `CREATE EXTENSION IF NOT EXISTS vector`; si tu usuario no tiene permiso, un
+con `CREATE EXTENSION IF NOT EXISTS vector`; si el usuario configurado no tiene permiso, un
 administrador debe ejecutar esa sentencia en la misma base desde Query Tool.
 Si no aparece ninguna fila, primero hay que instalar pgvector para la versión de
 PostgreSQL que utiliza ese servidor. Las migraciones no instalan extensiones en el sistema.
@@ -68,7 +74,7 @@ PostgreSQL que utiliza ese servidor. Las migraciones no instalan extensiones en 
 Con el servidor PostgreSQL iniciado y `.env` configurado:
 
 ```bash
-npm run build
+npm run build:all
 npm run db:migrate
 npm run data:load
 ```
@@ -85,6 +91,21 @@ ollama pull qwen3:8b
 npm run rag:ingest
 npm start
 ```
+
+La aplicación completa y la API están disponibles en **http://127.0.0.1:3000**.
+Después de compilar, Express sirve `frontend/dist` desde el mismo origen.
+
+En la pantalla de acceso se introduce el nombre, el perfil Asesor o Gerencia y la clave
+configurada en `HUMAN_API_TOKEN`. La clave se usa para abrir una sesión y no se guarda
+en localStorage ni se incluye en el bundle. La sesión usa una cookie HttpOnly y dura
+ocho horas. Gerencia dispone de tablero, cierres y asistente; el asesor accede a
+originación y cobro. El acceso está diseñado para ejecución local con una clave compartida y selección de perfil;
+no incluye administración individual de cuentas.
+
+Para desarrollar con recarga automática, mantener `npm start` en una terminal y ejecutar
+`npm run frontend:dev` en otra. La interfaz de desarrollo se abre en la URL de Vite
+(normalmente http://localhost:5173).
+El proxy conserva el origen y envía las peticiones a la API local.
 
 La API escucha en `http://127.0.0.1:3000`. El asistente inicia su servidor MCP por stdio
 cuando lo necesita. Para usar MCP desde otro cliente, ejecutar `npm run mcp`; no se escribe
@@ -106,10 +127,11 @@ Recompilar después de modificar TypeScript. `npm test` compila automáticamente
 | `EMBEDDING_MODEL` | Embeddings multilingües; `bge-m3` |
 | `HUMAN_API_TOKEN` | Token privado de al menos 24 caracteres para operaciones humanas y chat |
 
-## API para la futura interfaz
+## API de la interfaz
 
-Todas las fechas de negocio son explícitas. Para el guion se utiliza `2026-10-31`, excepto
-G-7 (`2027-01-24`). No se sustituye esa fecha por el reloj de la máquina.
+Todas las fechas de negocio son explícitas. Los escenarios de validación utilizan
+`2026-10-31`, excepto G-7 (`2027-01-24`). Los cálculos utilizan la fecha de corte
+indicada en la consulta, sin sustituirla por la fecha del sistema operativo.
 
 | Método y ruta | Función |
 |---|---|
@@ -144,7 +166,7 @@ MCP ofrece consultas de crédito, deuda de cuota, mora, morosos, vencimientos, c
 cierres y búsqueda de políticas. `proponer_pago` solo crea una solicitud PENDIENTE.
 **No existe herramienta MCP para aprobar pagos.** Una persona confirma por la API humana;
 se revalida el monto, el estado del crédito, el período y la idempotencia en una transacción.
-La futura interfaz debe mostrar ese paso explícitamente.
+La interfaz muestra el desglose y un diálogo de confirmación explícita antes de registrar el pago.
 
 RAG usa LangChain.js, fragmentos de 1000 caracteres con solapamiento de 150, embeddings
 `bge-m3` mediante Ollama y cinco vecinos por distancia coseno en pgvector. El solapamiento
@@ -164,7 +186,7 @@ La respuesta del chat contiene `respuesta`, `sesion`, `evidencias` y `fuentes`. 
 financieros se redactan mediante presentación determinista de los resultados MCP: importes
 en quetzales, con dos decimales, sin fórmulas ni conversiones redactadas por el modelo.
 El modelo selecciona herramientas y explica políticas con RAG; el texto de políticas aún
-requiere revisión semántica. La interfaz mostrará también las evidencias y las fuentes.
+requiere revisión semántica. La interfaz muestra las evidencias y las fuentes de cada respuesta.
 
 ## Pruebas
 
@@ -192,10 +214,30 @@ seguimiento G-6 de 7 a 30 días en la misma sesión. Muestra `VALIDACIÓN OK` o 
 concretos. Esto no sustituye la comparación con los oráculos privados ni la revisión
 semántica de cada afirmación del RAG. Los evals de `npm test` usan un modelo controlado.
 
-## Correspondencia con las pantallas de P2
+## Pruebas de interfaz
 
-| Pantalla futura | Caso de uso / backend |
+```bash
+npx playwright install chromium
+npm run test:ui
+```
+
+Los diez escenarios de navegador cubren escritorio y móvil (390 px): acceso, consulta
+de mora, monto incorrecto, aprobación de pago, comprobante, reintento, simulación,
+confirmación, desembolso, cierre y fuentes del chat con memoria. Usan respuestas API
+de prueba para no alterar la cartera real. La suite del backend verifica las operaciones
+SQL con PGlite y las cookies y perfiles mediante HTTP local.
+
+La navegación funciona con teclado; los diálogos conservan el foco y se cierran con Escape.
+El sistema avisa al perder conexión; no promete registrar pagos sin conexión. La clave del
+último pago se conserva en el navegador para reintentar sin duplicar, pero los saldos
+y confirmaciones siempre se consultan al servidor.
+
+## Pantallas y funciones
+
+| Pantalla implementada | Caso de uso / backend |
 |---|---|
+| Inicio de sesión | Acceso con perfil Asesor o Gerencia |
+| Búsqueda y listado de créditos | Consultar y filtrar la cartera |
 | Solicitud de crédito, alta del cliente incluida | Simular y originar |
 | Detalle del crédito | Consultar crédito |
 | Registro de pago | Proponer, revisar desglose y decidir |
@@ -203,18 +245,32 @@ semántica de cada afirmación del RAG. Los evals de `npm test` usan un modelo c
 | Detalle de la mora | Explicar mora de cuota |
 | Tablero gerencial | Cartera y morosos por tramo |
 | Cierre diario / mensual | Consultar y generar cierre |
+| Asistente gerencial | Consultar información mediante MCP y políticas mediante RAG |
 
-## Documentación y pendientes
+La solicitud se organiza en cinco pasos: alta del cliente, condiciones del crédito,
+simulación, confirmación y desembolso confirmado. Las vistas de plan, mora y pago
+se abren desde el detalle del crédito.
+
+## Documentación
 
 - [Resultados de validación](docs/final/validacion.md).
 - [Contrato HTTP y ejemplos](docs/final/api.md).
-- [Estado de entregables y guion de validación](docs/final/entregables.md).
 - [Decisiones históricas](docs/adr/ADR-001-arquitectura-hexagonal.md).
 - [Impacto SOLID de P2](docs/informe-impacto-solid.md).
 
-Pendientes: frontend React, aprobación visible, validación con Ollama real, ensayo de los
-oráculos del docente, informe final elaborado por el equipo, grabación y enlace del video. No se ha desplegado en la nube.
+## Alcance y limitaciones
+
+El sistema está preparado para ejecución local; no se incluye un despliegue en la nube.
+La originación integra simulación, revisión y desembolso en una operación atómica.
+La bandeja independiente de evaluación de solicitudes del prototipo de la segunda fase
+no está implementada.
+
+Las evaluaciones automatizadas verifican los escenarios incluidos en el repositorio.
+Sus resultados no equivalen a una validación contra los oráculos privados de evaluación.
+Las respuestas del asistente sobre políticas requieren revisión semántica, además de
+la comprobación de las fuentes recuperadas.
 
 ## Uso de IA
 
-ChatGPT y Codex se utilizaron para analizar requisitos, revisar arquitectura.
+Se utilizaron ChatGPT y Codex como herramientas de apoyo para el análisis de requisitos,
+la revisión de arquitectura, la implementación, la documentación y la preparación de pruebas.

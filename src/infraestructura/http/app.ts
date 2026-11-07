@@ -1,14 +1,14 @@
+import { crearSesiones } from "./sesiones.js";
+import path from "node:path";
+import { existsSync } from "node:fs";
 import {
   simulacionSchema,
   decisionSchema,
   cierreSchema,
   chatSchema,
 } from "../../contratos/final.js";
-import express, {
-  type RequestHandler,
-  type ErrorRequestHandler,
-} from "express";
-import { timingSafeEqual, randomUUID } from "node:crypto";
+import express, { type ErrorRequestHandler } from "express";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { ConsultasGerenciales } from "../../aplicacion/servicios/ConsultasGerenciales.js";
 import { RepositorioCarteraPg } from "../persistencia/RepositorioCarteraPg.js";
@@ -28,35 +28,32 @@ export function crearApp() {
   const consultas = new ConsultasGerenciales(new RepositorioCarteraPg());
   const operaciones = new OperacionesPg();
   const asistente = new ServicioAsistente();
-  const humano: RequestHandler = (req, _res, next) => {
-    const esperado = process.env.HUMAN_API_TOKEN;
-    const recibido = req.get("Authorization")?.replace(/^Bearer /, "") ?? "";
-    if (!esperado || esperado.length < 24)
-      return next(
-        new ErrorAplicacion(
-          "CONFIGURACION_HUMANA",
-          "Configure HUMAN_API_TOKEN con al menos 24 caracteres",
-          503,
-        ),
-      );
-    const a = Buffer.from(recibido),
-      b = Buffer.from(esperado);
-    if (a.length !== b.length || !timingSafeEqual(a, b))
-      return next(
-        new ErrorAplicacion(
-          "NO_AUTORIZADO",
-          "Se requiere autorización humana",
-          403,
-        ),
-      );
-    next();
-  };
+  app.locals.cerrar = () => asistente.cerrar();
+  const { humano, gerencia, actor } = crearSesiones(app);
   app.get("/api/health", (_req, res) =>
     res.json({ estado: "OK", servicio: "Crédito Vecino", version: "2.0.0" }),
+  );
+  app.get("/api/clientes/etiquetas", humano, async (_req, res) =>
+    res.json(
+      (
+        await pool.query(
+          "SELECT id_cliente,nombre_completo FROM clientes ORDER BY nombre_completo",
+        )
+      ).rows,
+    ),
   );
   app.get("/api/creditos", async (_req, res) => {
     const d = await new RepositorioCarteraPg().leer();
     res.json(d.creditos);
+  });
+  app.get("/api/creditos/:id/cliente", humano, async (req, res) => {
+    const r = await pool.query(
+      "SELECT cl.id_cliente,cl.nombre_completo FROM clientes cl JOIN creditos c ON c.id_cliente=cl.id_cliente WHERE c.id_credito=$1",
+      [idSchema.parse(req.params.id)],
+    );
+    if (!r.rows[0])
+      throw new ErrorAplicacion("NO_ENCONTRADO", "Crédito inexistente", 404);
+    res.json(r.rows[0]);
   });
   app.get("/api/creditos/:id", async (req, res) =>
     res.json(
@@ -91,6 +88,25 @@ export function crearApp() {
     );
     res.json(c.cuotas);
   });
+  app.get("/api/cartera/creditos", async (req, res) =>
+    res.json(
+      await consultas.listar(
+        fechaSchema.parse(req.query.fecha),
+        z
+          .enum([
+            "MORA_1",
+            "MORA_2",
+            "MORA_3",
+            "VENCIDO",
+            "REESTRUCTURADO",
+            "INCOBRABLE",
+            "SIN_MORA",
+          ])
+          .optional()
+          .parse(req.query.tramo),
+      ),
+    ),
+  );
   app.get("/api/cartera", async (req, res) =>
     res.json(await consultas.cartera(fechaSchema.parse(req.query.fecha))),
   );
@@ -120,16 +136,20 @@ export function crearApp() {
       "SELECT resultado FROM cierres WHERE desde=$1 AND hasta=$2",
       [desde, hasta],
     );
-    res.json(
-      persistido.rows[0]?.resultado ?? (await consultas.cierre(desde, hasta)),
-    );
+    res.json({
+      ...(persistido.rows[0]?.resultado ??
+        (await consultas.cierre(desde, hasta))),
+      persistido: !!persistido.rows[0],
+    });
   });
   app.post("/api/simulaciones", (req, res) => {
     const p = simulacionSchema.parse(req.body);
     res.json(simular(p.capital_centavos, p.tna_bps, p.plazo_meses, p.fecha));
   });
   app.post("/api/originaciones", humano, async (req, res) =>
-    res.status(201).json(await operaciones.originar(req.body, "asesor")),
+    res
+      .status(201)
+      .json(await operaciones.originar(req.body, actor(req) ?? "asesor")),
   );
   app.post("/api/pagos/propuestas", async (req, res) =>
     res.status(202).json(await operaciones.proponer(req.body)),
@@ -149,18 +169,29 @@ export function crearApp() {
       await operaciones.decidir(
         idSchema.parse(req.params.id),
         p.aprobar,
-        p.actor,
+        actor(req) ?? p.actor,
       ),
     );
   });
-  app.post("/api/cierres", humano, async (req, res) => {
+  app.post("/api/cierres", humano, gerencia, async (req, res) => {
     const p = cierreSchema.parse(req.body);
-    res.json(await operaciones.generarCierre(p.desde, p.hasta, p.actor));
+    res.json(
+      await operaciones.generarCierre(p.desde, p.hasta, actor(req) ?? p.actor),
+    );
   });
-  app.post("/api/chat", humano, async (req, res) => {
+  app.post("/api/chat", humano, gerencia, async (req, res) => {
     const p = chatSchema.parse(req.body);
     res.json(await asistente.conversar(p.pregunta, p.fecha, p.sesion));
   });
+  const sitio = path.resolve("frontend/dist");
+  if (existsSync(path.join(sitio, "index.html"))) {
+    app.use(express.static(sitio));
+    app.use((req, res, next) => {
+      if (req.method === "GET" && !req.path.startsWith("/api/"))
+        res.sendFile(path.join(sitio, "index.html"));
+      else next();
+    });
+  }
   app.use((_req, res) =>
     res
       .status(404)
